@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#1268e8">
+    <title>ARISU Works | 사용자 업무 포털</title>
+    <link rel="icon" href="data:,">
+    <link rel="stylesheet" href="/portal.css">
+    <link rel="stylesheet" href="/portal-polish.css">
+    <script src="/portal.js" defer></script>
+</head>
+<body>
+<!-- 키보드 사용자가 반복되는 헤더와 메뉴를 건너뛰고 업무 본문으로 바로 이동할 수 있게 한다. -->
+<a class="skip-link" href="#portalMain">본문 바로가기</a>
+<!-- 모바일에서도 현재 권한 메뉴와 사용자 기능에 바로 접근할 수 있는 상단 헤더다. -->
+<header class="portal-header">
+    <div class="header-brand">
+        <button id="btnMenuToggle" class="icon-button mobile-only" type="button"
+                aria-label="전체 메뉴 열기" aria-controls="portalSidebar" aria-expanded="false">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+        </button>
+        <a class="brand-link" href="#home" aria-label="ARISU Works 홈">
+            <span class="brand-symbol" aria-hidden="true">
+                <svg viewBox="0 0 32 32"><path d="M16 3c3.8 5.1 9 10.3 9 17a9 9 0 0 1-18 0c0-6.7 5.2-11.9 9-17Z"/><path d="M11 21c1.2 2.4 3 3.5 5.5 3.5"/></svg>
+            </span>
+            <span><strong>ARISU Works</strong><small>통합 업무 포털</small></span>
+        </a>
+    </div>
+
+    <div class="header-search">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16.5 16.5 4 4"/></svg>
+        <input id="serviceSearch" type="search" placeholder="메뉴와 서비스를 검색하세요" autocomplete="off">
+        <kbd>Ctrl K</kbd>
+    </div>
+
+    <div class="header-actions">
+        <button id="btnSync" class="icon-button" type="button" title="최신 권한과 메뉴 반영">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5"/><path d="M6.1 8.2A7 7 0 0 1 18.7 7M17.9 15.8A7 7 0 0 1 5.3 17"/></svg>
+            <span class="desktop-only">권한 새로고침</span>
+        </button>
+        <button class="icon-button notification-button" type="button" title="알림">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg>
+            <i aria-label="읽지 않은 알림 3건">3</i>
+        </button>
+        <div class="profile-box">
+            <span id="userAvatar" class="user-avatar">U</span>
+            <span class="profile-copy"><strong id="portalUsername">사용자 확인 중</strong><small id="portalOrg">조직 확인 중</small></span>
+        </div>
+        <button id="btnLogout" class="icon-button" type="button" title="로그아웃">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 4H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h5M15 16l4-4-4-4M19 12H8"/></svg>
+        </button>
+    </div>
+</header>
+
+<div class="portal-layout">
+    <!-- 서버가 현재 세션 권한으로 계산한 메뉴만 렌더링하는 사용자 전용 탐색 영역이다. -->
+    <aside id="portalSidebar" class="portal-sidebar">
+        <div class="sidebar-user">
+            <p>나의 업무공간</p>
+            <strong id="sidebarGreeting">안녕하세요</strong>
+            <span id="syncState"><i></i>권한 동기화 중</span>
+        </div>
+        <p class="nav-caption">MENU</p>
+        <nav id="portalMenu" aria-label="사용자 업무 메뉴"></nav>
+        <div class="sidebar-bottom">
+            <a id="adminConsoleLink" class="admin-link" href="/" hidden>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1a1.7 1.7 0 0 0 1.9.3A1.7 1.7 0 0 0 10 3V2.8h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z"/></svg>
+                시스템 관리 콘솔
+            </a>
+            <div class="help-card"><b>?</b><span><strong>업무 도움이 필요하신가요?</strong><small>정보시스템 담당자에게 문의하세요.</small></span></div>
+        </div>
+    </aside>
+    <button id="sidebarBackdrop" class="sidebar-backdrop" type="button" aria-label="전체 메뉴 닫기"></button>
+
+    <main id="portalMain" class="portal-main" tabindex="-1">
+        <!-- 홈은 로그인 사용자와 현재 권한을 기준으로 업무 현황과 접근 가능 서비스를 보여준다. -->
+        <section id="home" class="portal-page active" data-route="#home">
+            <div class="welcome-panel">
+                <div class="welcome-copy">
+                    <span class="welcome-label">MY WORKSPACE</span>
+                    <h1><em id="welcomeName">사용자</em>님, 좋은 하루입니다.</h1>
+                    <p id="todayText">오늘의 업무 현황을 확인하고 필요한 서비스를 바로 시작하세요.</p>
+                    <div id="authorityChips" class="authority-chips"></div>
+                </div>
+                <div class="welcome-visual" aria-hidden="true">
+                    <div class="visual-ring ring-one"></div><div class="visual-ring ring-two"></div>
+                    <div class="water-card"><svg viewBox="0 0 48 48"><path d="M24 5c5.8 7.8 13 15.8 13 25a13 13 0 0 1-26 0c0-9.2 7.2-17.2 13-25Z"/><path d="M17 31c1.8 3.5 4.7 5.2 8.5 5.2"/></svg></div>
+                </div>
+            </div>
+
+            <div class="summary-grid">
+                <article class="summary-card blue"><span class="summary-icon">✓</span><div><small>접근 가능 서비스</small><strong id="menuCount">0</strong><p>현재 권한 기준 메뉴</p></div></article>
+                <article class="summary-card violet"><span class="summary-icon">◆</span><div><small>유효 업무 권한</small><strong id="authorityCount">0</strong><p>직접·위임 합산 결과</p></div></article>
+                <article class="summary-card green"><span class="summary-icon">●</span><div><small>사용 가능 상태</small><strong id="statusCount">0</strong><p>활성 공통코드 기준</p></div></article>
+                <article class="summary-card orange"><span class="summary-icon">↻</span><div><small>마지막 동기화</small><strong id="lastSync">--:--</strong><p>자동 갱신 15초</p></div></article>
+            </div>
+
+            <div class="dashboard-grid">
+                <section class="content-card quick-card">
+                    <div class="section-heading"><div><span>QUICK SERVICE</span><h2>자주 찾는 서비스</h2></div><button id="btnShowAll" type="button">전체 메뉴 보기</button></div>
+                    <div id="quickServices" class="quick-services"></div>
+                </section>
+
+                <section class="content-card status-card">
+                    <div class="section-heading"><div><span>COMMON STATUS</span><h2>업무 상태 코드</h2></div><small id="codeVersion">버전 확인 중</small></div>
+                    <p>공통코드 관리에서 활성화한 상태만 사용자 업무 선택지에 표시됩니다.</p>
+                    <div id="statusCodes" class="status-list"></div>
+                </section>
+
+                <section class="content-card notice-card">
+                    <div class="section-heading"><div><span>NOTICE</span><h2>공지사항</h2></div><a href="#content">더보기</a></div>
+                    <div class="notice-list">
+                        <a href="#content"><b>안내</b><span>통합 권한관리 서비스 사용자 안내</span><time>2026.09.01</time></a>
+                        <a href="#content"><b>점검</b><span>업무 시스템 정기 점검 일정 안내</span><time>2026.08.28</time></a>
+                        <a href="#content"><b>자료</b><span>개인정보 보호 및 보안 준수사항</span><time>2026.08.20</time></a>
+                        <a href="#content"><b>소식</b><span>전자결재 서비스 개선사항 안내</span><time>2026.08.14</time></a>
+                    </div>
+                </section>
+
+                <section class="content-card schedule-card">
+                    <div class="section-heading"><div><span>MY SCHEDULE</span><h2>오늘의 일정</h2></div><strong id="todayDay">01</strong></div>
+                    <ul><li><time>09:30</time><span>주간 업무회의</span></li><li><time>13:30</time><span>서비스 운영 점검</span></li><li><time>16:00</time><span>권한 변경사항 검토</span></li></ul>
+                </section>
+            </div>
+        </section>
+
+        <!-- 콘텐츠 기능은 같은 화면 버튼 제어와 서버 재인가를 함께 시험하는 실제 업무형 목록이다. -->
+        <section id="content" class="portal-page" data-route="#content" hidden>
+            <div class="page-head"><div><p>홈 / 업무 서비스 / 콘텐츠</p><h1>콘텐츠 관리</h1><span>권한에 따라 조회·작성·게시 기능이 자동으로 조정됩니다.</span></div><button class="secondary-button" data-go-home type="button">홈으로</button></div>
+            <section class="content-card work-card">
+                <div class="toolbar">
+                    <div class="filter-group"><select aria-label="검색 조건"><option>제목</option><option>작성자</option><option>상태</option></select><input type="search" placeholder="검색어를 입력하세요"><button id="btnContentRead" data-protected type="button" disabled>조회</button></div>
+                    <div class="work-actions"><button id="btnContentSave" data-protected type="button" disabled>새 콘텐츠 작성</button><button id="btnContentPublish" data-protected type="button" disabled>선택 게시</button></div>
+                </div>
+                <div class="table-scroll"><table><thead><tr><th><input type="checkbox" aria-label="전체 선택"></th><th>번호</th><th>구분</th><th>제목</th><th>상태</th><th>작성자</th><th>등록일</th></tr></thead><tbody id="contentRows"></tbody></table></div>
+                <div class="pagination"><button type="button" disabled>‹</button><button class="current" type="button">1</button><button type="button">2</button><button type="button">3</button><button type="button">›</button></div>
+            </section>
+        </section>
+
+        <!-- 관리 메뉴와 신규 사용자 메뉴에 대응하는 화면은 JavaScript가 여기에 동적으로 추가한다. -->
+        <div id="dynamicPages"></div>
+
+        <footer class="portal-footer"><span>© 2026 ARISU Works. All rights reserved.</span><span>권한 문의 · 개인정보처리방침 · 이용안내</span></footer>
+    </main>
+</div>
+
+<!-- 메뉴·권한 자동 갱신이나 API 결과를 페이지 흐름을 방해하지 않고 알리는 영역이다. -->
+<div id="portalToast" class="portal-toast" role="status" aria-live="polite"></div>
+</body>
+</html>

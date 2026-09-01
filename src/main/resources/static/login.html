@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="ARISU Works 통합 업무 포털 로그인">
+    <title>로그인 | ARISU Works</title>
+    <link rel="stylesheet" href="/login.css">
+    <link rel="stylesheet" href="/login-polish.css">
+    <script src="/login.js" defer></script>
+</head>
+<body>
+<!-- 로그인 전에도 서비스 성격을 이해할 수 있도록 업무 포털 소개와 인증 영역을 함께 배치한다. -->
+<main class="login-shell">
+    <section class="brand-panel" aria-labelledby="serviceTitle">
+        <a class="brand" href="/login" aria-label="ARISU Works 로그인 홈">
+            <span class="brand-mark" aria-hidden="true">A</span>
+            <span>ARISU <strong>Works</strong></span>
+        </a>
+
+        <div class="brand-copy">
+            <p class="eyebrow">SMART WATER WORKPLACE</p>
+            <h1 id="serviceTitle">업무와 권한을<br>하나의 포털에서</h1>
+            <p>내 권한에 맞는 메뉴와 기능만 안전하게 제공하고,<br>관리자 변경 내용을 즉시 업무 화면에 반영합니다.</p>
+        </div>
+
+        <div class="feature-list" aria-label="포털 주요 특징">
+            <article>
+                <span class="feature-icon" aria-hidden="true">01</span>
+                <div><strong>맞춤 업무 메뉴</strong><small>사용자별 허용 메뉴 자동 구성</small></div>
+            </article>
+            <article>
+                <span class="feature-icon" aria-hidden="true">02</span>
+                <div><strong>안전한 기능 제어</strong><small>조회·저장·게시 권한 개별 적용</small></div>
+            </article>
+            <article>
+                <span class="feature-icon" aria-hidden="true">03</span>
+                <div><strong>운영 기준 동기화</strong><small>공통코드와 메뉴 변경 즉시 반영</small></div>
+            </article>
+        </div>
+    </section>
+
+    <!-- Spring Security의 POST /login 규약을 그대로 사용해 인증 로직을 중복 구현하지 않는다. -->
+    <section class="form-panel" aria-labelledby="loginTitle">
+        <div class="login-card">
+            <div class="mobile-brand">
+                <span class="brand-mark" aria-hidden="true">A</span>
+                <span>ARISU <strong>Works</strong></span>
+            </div>
+            <p class="eyebrow">WELCOME BACK</p>
+            <h2 id="loginTitle">업무 포털 로그인</h2>
+            <p class="login-guide">등록된 계정으로 로그인해 주세요.</p>
+
+            <div id="loginMessage" class="login-message" role="status" hidden></div>
+
+            <form id="loginForm" method="post" action="/login">
+                <!-- login.js가 공개 CSRF 조회 API에서 받은 토큰을 이 필드에 안전하게 설정한다. -->
+                <input id="csrfToken" type="hidden" name="_csrf" value="">
+
+                <label for="username">아이디</label>
+                <div class="input-wrap">
+                    <span aria-hidden="true">ID</span>
+                    <input id="username" name="username" type="text"
+                           autocomplete="username" placeholder="아이디를 입력하세요" required autofocus>
+                </div>
+
+                <label for="password">비밀번호</label>
+                <div class="input-wrap password-wrap">
+                    <span aria-hidden="true">PW</span>
+                    <input id="password" name="password" type="password"
+                           autocomplete="current-password" placeholder="비밀번호를 입력하세요" required>
+                    <button id="togglePassword" class="password-toggle" type="button"
+                            aria-label="비밀번호 표시">보기</button>
+                </div>
+
+                <div class="form-options">
+                    <label class="remember-option">
+                        <input type="checkbox" disabled>
+                        <span>아이디 저장</span>
+                    </label>
+                    <span>데모 환경</span>
+                </div>
+
+                <button id="loginButton" class="login-button" type="submit" disabled>
+                    <span>로그인</span><span aria-hidden="true">→</span>
+                </button>
+            </form>
+
+            <!-- 테스트 계정은 운영 적용 전에 반드시 사내 인증 체계로 교체해야 한다. -->
+            <details class="demo-accounts">
+                <summary>테스트 계정 보기</summary>
+                <div class="account-grid">
+                    <span>일반 사용자</span><code>viewer / viewer123!</code>
+                    <span>콘텐츠 담당자</span><code>manager / manager123!</code>
+                    <span>시스템 관리자</span><code>admin / admin123!</code>
+                </div>
+            </details>
+
+            <p class="security-note"><span aria-hidden="true">●</span> 모든 로그인과 권한 변경은 감사 이력에 기록됩니다.</p>
+        </div>
+        <footer>© 2026 ARISU Works. Permission Management Demo.</footer>
+    </section>
+</main>
+</body>
+</html>

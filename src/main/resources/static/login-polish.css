@@ -1,0 +1,43 @@
+/* 로그인 화면의 한글 가독성과 입력 편의성을 높이는 후순위 보정 레이어다. */
+:root {
+    font-family: "Pretendard Variable", Pretendard, "Noto Sans KR", "Segoe UI", "Malgun Gothic", sans-serif;
+    font-synthesis: none;
+}
+
+body {
+    font-size: 15px;
+    line-height: 1.55;
+    letter-spacing: -.01em;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+}
+
+.brand { font-size: 23px; }
+.brand-copy h1 { line-height: 1.2; }
+.brand-copy > p:last-child { font-size: 17px; }
+.feature-list strong { font-size: 15px; }
+.feature-list small { font-size: 13px; }
+.login-card { width: min(100%, 460px); }
+.login-card h2 { font-size: 36px; }
+.login-guide { font-size: 15px; }
+.login-card > form > label { font-size: 14px; }
+.input-wrap { min-height: 60px; }
+.input-wrap > span { width: 60px; font-size: 11px; }
+.input-wrap input { font-size: 15px; }
+.password-toggle { min-width: 54px; min-height: 38px; font-size: 13px; }
+.form-options { font-size: 13px; }
+.login-button { min-height: 60px; font-size: 15px; }
+.login-message { font-size: 14px; }
+.demo-accounts summary { min-height: 46px; font-size: 13px; }
+.account-grid,
+.account-grid code { font-size: 13px; }
+.security-note { font-size: 12px; }
+.form-panel footer { font-size: 11px; }
+
+@media (max-width: 520px) {
+    .form-panel { padding: 30px 20px 18px; }
+    .mobile-brand { margin-bottom: 36px; font-size: 20px; }
+    .login-card h2 { font-size: 31px; }
+    .login-guide { margin-bottom: 26px; }
+    .input-wrap { min-height: 58px; }
+}

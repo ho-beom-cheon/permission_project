@@ -1,0 +1,25 @@
+# 이 예제는 운영 연결 없이 로컬에서 권한 시나리오를 확인하는 demo 프로필 전용 애플리케이션이다.
+spring:
+  application:
+    name: permission-menu-demo
+  profiles:
+    default: demo
+  jackson:
+    time-zone: Asia/Seoul
+
+server:
+  # 외부 네트워크에 데모 계정이 노출되지 않도록 로컬 루프백 인터페이스에만 바인딩한다.
+  address: 127.0.0.1
+  port: 8080
+  servlet:
+    session:
+      # 서버 세션을 권한 판정의 사용자 기준으로 사용하며 쿠키는 JavaScript에서 읽지 못하게 한다.
+      timeout: 30m
+      cookie:
+        http-only: true
+        same-site: lax
+
+logging:
+  # 업무 권한 판정과 감사 이벤트 확인에 필요한 애플리케이션 로그 수준이다.
+  level:
+    com.example.permissiondemo: info

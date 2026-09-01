@@ -1,0 +1,22 @@
+# Oracle DB 전환 검토용 예제다.
+# 파일명이 .example로 끝나므로 현재 애플리케이션 기동에는 자동 적용되지 않는다.
+# 실제 접속 주소, 계정, 비밀번호는 Git에 기록하지 않고 환경변수 또는 비밀 저장소에서 주입한다.
+spring:
+  config:
+    activate:
+      on-profile: oracle
+  datasource:
+    driver-class-name: oracle.jdbc.OracleDriver
+    url: ${PM_DB_URL}
+    username: ${PM_DB_USERNAME}
+    password: ${PM_DB_PASSWORD}
+    hikari:
+      maximum-pool-size: ${PM_DB_POOL_MAX:10}
+      minimum-idle: ${PM_DB_POOL_MIN:2}
+      connection-timeout: ${PM_DB_CONN_TIMEOUT_MS:30000}
+      validation-timeout: 5000
+      connection-test-query: SELECT 1 FROM DUAL
+  sql:
+    init:
+      # DDL과 초기 데이터는 DBA 검토 후 별도 절차로 실행한다.
+      mode: never
