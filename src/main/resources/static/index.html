@@ -20,6 +20,11 @@
         <h1>통합 권한 관리</h1>
     </div>
     <div class="topbar-actions">
+        <a class="logout-button" href="/authority-requests.html">권한 신청·심사·분류</a>
+        <a class="logout-button" href="/management.html">사용자·조직·기준정보</a>
+        <a class="logout-button" href="/codes.html">공통코드 전체 관리</a>
+        <a class="logout-button" href="/community.html">게시판</a>
+        <a class="logout-button" href="/sessions.html">접속 사용자</a>
         <span class="environment"><i></i>LOCAL TEST</span>
         <button id="btnPortalHome" type="button" class="logout-button" title="사용자 업무 포털로 이동">
             <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -42,6 +47,12 @@
         </div>
     </div>
 </header>
+
+<!-- 업무 시스템처럼 현재 열려 있는 관리 화면의 맥락을 빠르게 확인하는 탭 바 -->
+<nav class="workspace-tabs" aria-label="열린 관리 화면">
+    <button type="button" class="tab-menu-toggle" aria-label="메뉴 펼치기">☰</button>
+    <div id="workspaceTabs" class="workspace-tab-list" role="tablist" aria-label="열린 화면 탭"></div>
+</nav>
 
 <div class="layout">
     <!-- 서버가 권한별로 필터링하고 조립한 메뉴 계층을 출력하는 영역 -->
@@ -130,6 +141,9 @@
             <div class="code-form">
                 <label>권한 ID <input id="authMasterId" maxlength="50" placeholder="예: AUTH_REPORT_MANAGER"></label>
                 <label>권한명 <input id="authMasterName" maxlength="100" placeholder="예: 보고서 관리자"></label>
+                <label>시스템 ID <input id="authMasterSystem" maxlength="50" value="INFO"></label>
+                <label>권한 분류 ID <input id="authMasterClassification" maxlength="50" placeholder="분류 관리에서 등록한 ID"></label>
+                <label>권한 설명 <input id="authMasterDescription" maxlength="200"></label>
                 <label>활성 <input id="authMasterActive" type="checkbox" checked></label>
                 <button id="btnAuthMasterSave" data-protected data-action="AUTHORITY_UPDATE"
                         type="button" disabled>권한 마스터 저장</button>

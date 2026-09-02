@@ -68,6 +68,21 @@ public class ApiExceptionHandler {
                 List.of()));
     }
 
+    /** 잘못된 경로/쿼리 타입과 누락된 업로드 항목은 서버 오류로 취급하지 않는다. */
+    @ExceptionHandler({org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class,
+            org.springframework.web.bind.MissingServletRequestParameterException.class,
+            org.springframework.web.multipart.support.MissingServletRequestPartException.class})
+    public ResponseEntity<ApiResponse<Void>> handleBinding(Exception exception, HttpServletRequest request) {
+        return ResponseEntity.badRequest().body(errorFactory.createMessage(
+                ErrorCode.INVALID_REQUEST, "요청 항목과 값의 형식을 확인해 주세요.", request, List.of()));
+    }
+
+    @ExceptionHandler(org.springframework.web.multipart.MaxUploadSizeExceededException.class)
+    public ResponseEntity<ApiResponse<Void>> handleUploadLimit(HttpServletRequest request) {
+        return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE).body(errorFactory.createMessage(
+                ErrorCode.INVALID_REQUEST, "첨부파일은 파일당 10MB, 한 요청당 12MB 이하여야 합니다.", request, List.of()));
+    }
+
     /** Bean Validation의 필드별 오류를 클라이언트가 입력란에 매핑할 수 있는 목록으로 변환한다. */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse<Void>> handleValidation(

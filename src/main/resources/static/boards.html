@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>게시판 구분 관리 | ARISU Works</title><link rel="icon" href="data:,"><link rel="stylesheet" href="/authority-requests.css"><script type="module" src="/boards.js"></script></head>
+<body><header><div><small>ARISU WORKS</small><h1>게시판 구분 관리</h1></div><nav><a href="/portal.html">사용자 홈</a><a href="/community.html">게시판</a><a href="/management.html">공통 관리</a></nav></header>
+<main><p id="feedback" role="status" aria-live="polite">게시판 설정을 확인하고 있습니다.</p>
+<section><label>이름 또는 코드 검색<input id="query" type="search" maxlength="100"></label><div class="actions"><button id="search">조회</button><button id="new">새 게시판</button></div>
+<div class="table-wrap"><table><thead><tr><th>코드</th><th>게시판 이름</th><th>유형</th><th>사용</th><th>첨부 제한</th><th>편집</th></tr></thead><tbody id="rows"></tbody></table></div></section>
+<section id="editorSection" hidden><h2>게시판 설정</h2><form id="editor"><div class="form-grid">
+<label>게시판 코드<input id="id" pattern="[A-Z0-9_]{1,50}" maxlength="50" required></label>
+<label>유형<select id="type"><option value="NOTICE">공지</option><option value="FAQ">FAQ</option><option value="QNA">질문답변</option><option value="DOCUMENT">자료실</option><option value="TERMS">약관</option></select></label>
+<label>게시판 이름<input id="name" maxlength="100" required></label><label>시스템 코드<input id="systemId" pattern="[A-Z0-9_]{1,50}" maxlength="50" required value="COMMON"></label>
+<label>최대 첨부 수<input id="maxAttachments" type="number" min="0" max="10" step="1" value="10" required></label></div>
+<label>설명<textarea id="description" rows="3" maxlength="2000"></textarea></label>
+<div class="choices"><label class="check"><input id="active" type="checkbox" checked>사용</label><label class="check"><input id="noticeEnabled" type="checkbox">상단 공지 허용</label><label class="check"><input id="answerEnabled" type="checkbox">담당자 답변 허용</label></div>
+<p>답변은 질문답변 유형에서 사용합니다. 사용 중지하면 일반 사용자의 게시글·첨부 조회가 차단되고 기존 글과 동의 이력은 보존됩니다.</p>
+<div class="actions"><button id="save" type="submit">저장</button><button id="deactivate" type="button" class="secondary" hidden>사용 중지</button><button id="cancel" type="button" class="secondary">취소</button></div></form></section>
+</main></body></html>

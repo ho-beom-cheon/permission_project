@@ -1,0 +1,7 @@
+{
+  "source_controllers": 68,
+  "partial": 32,
+  "not_mapped": 36,
+  "parity_verified": 0,
+  "note": "Controller mapping only. Counts are not migrated function counts; tests do not establish original parity."
+}

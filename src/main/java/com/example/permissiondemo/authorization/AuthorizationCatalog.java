@@ -22,12 +22,13 @@ import org.springframework.stereotype.Component;
 /**
  * 권한 마스터, 사용자 권한 이력, 메뉴와 프로그램 기능 매핑을 한곳에 보관하는 데모 카탈로그다.
  *
- * <p>이 클래스의 컬렉션은 DB 테이블을 대신하는 실행 중 변경 가능한 테스트 데이터다. 실제 시스템에서는
+ * <p>이 클래스의 실행 상태는 StateCoordinator를 통해 별도 로컬 DB에 저장·복원된다. 원본 스키마 이관 시에는
  * 권한 마스터, 사용자-권한 이력, 권한-메뉴, 권한-기능 Repository로 각각 교체하되 서비스가
  * 사용하는 조회 계약은 유지하는 것을 전제로 한다.</p>
  */
 @Component
-public class AuthorizationCatalog {
+@com.example.permissiondemo.storage.StateBoundary
+public class AuthorizationCatalog implements com.example.permissiondemo.storage.StateParticipant {
 
     public static final String AUTH_SYSTEM_ADMIN = "AUTH_SYSTEM_ADMIN";
     public static final String AUTH_CONTENT_MANAGER = "AUTH_CONTENT_MANAGER";
@@ -40,8 +41,11 @@ public class AuthorizationCatalog {
     /** 사용 가능 여부를 포함한 권한 마스터다. 관리 화면 저장을 반영할 수 있도록 동시성 맵에 보관한다. */
     private final ConcurrentMap<String, AuthorityDefinition> authorities = new ConcurrentHashMap<>();
 
+    /** 원본 권한분류기본의 계층을 보관한다. 분류는 그 자체로 사용자에게 부여되지 않는다. */
+    private final ConcurrentMap<String, AuthorityClassification> classifications = new ConcurrentHashMap<>();
+
     /** 사용자의 현재 소속 조직이다. 권한 이력의 조직과 일치하는 경우에만 현재 권한으로 평가한다. */
-    private final Map<String, UserProfile> users = Map.ofEntries(
+    private final Map<String, UserProfile> users = new ConcurrentHashMap<>(Map.ofEntries(
             Map.entry("admin", new UserProfile("admin", "HQ")),
             Map.entry("manager", new UserProfile("manager", "HQ")),
             Map.entry("viewer", new UserProfile("viewer", "HQ")),
@@ -50,7 +54,7 @@ public class AuthorizationCatalog {
             Map.entry("revoked", new UserProfile("revoked", "HQ")),
             Map.entry("moved", new UserProfile("moved", "BRANCH_B")),
             Map.entry("revokedManager", new UserProfile("revokedManager", "HQ")),
-            Map.entry("orphanDelegate", new UserProfile("orphanDelegate", "HQ")));
+            Map.entry("orphanDelegate", new UserProfile("orphanDelegate", "HQ"))));
 
     /**
      * 직접·위임 권한의 이력 데이터다.
@@ -185,8 +189,22 @@ public class AuthorizationCatalog {
                 .toList();
     }
 
+    /** 검증된 사용자 관리 서비스가 현재 조직·사용 여부를 변경한다. 이전 조직 권한 이력은 보존한다. */
+    public synchronized UserProfile saveUserProfile(String username, String organizationId, boolean active) {
+        if (username == null || !username.matches("[A-Za-z0-9_]{1,50}")
+                || organizationId == null || organizationId.isBlank() || organizationId.length() > 101) {
+            throw new IllegalArgumentException("사용자 ID 또는 조직 코드가 올바르지 않습니다.");
+        }
+        if ("admin".equals(username) && (!active || !"HQ".equals(organizationId))) {
+            throw new ApiException(ErrorCode.CONFLICT, "기본 관리자의 접근을 유지해야 합니다.");
+        }
+        UserProfile saved = new UserProfile(username, organizationId, active);
+        users.put(username, saved); authorityVersion.incrementAndGet();
+        return saved;
+    }
+
     /** 한 사용자의 모든 직접·위임 권한 이력을 반환한다. 최신 이력 선택은 서비스가 담당한다. */
-    public List<AuthorityAssignment> assignmentsFor(String username) {
+    public synchronized List<AuthorityAssignment> assignmentsFor(String username) {
         return assignments.stream()
                 .filter(assignment -> assignment.username().equals(username))
                 .toList();
@@ -275,12 +293,83 @@ public class AuthorizationCatalog {
         if (AUTH_SYSTEM_ADMIN.equals(authorityId) && !request.active()) {
             throw new ApiException(ErrorCode.CONFLICT, authorityId);
         }
-        AuthorityDefinition saved = new AuthorityDefinition(authorityId, name, request.active());
+        String systemId = normalizeId(request.systemId(), "systemId");
+        String classificationId = normalizeOptionalId(request.classificationId(), "classificationId");
+        if (classificationId != null) {
+            AuthorityClassification classification = classifications.get(classificationId);
+            if (classification == null || !classification.active() || !classification.systemId().equals(systemId)) {
+                throw new ApiException(ErrorCode.CONFLICT, classificationId);
+            }
+        }
+        AuthorityDefinition existing = authorities.get(authorityId);
+        if (existing != null && !existing.systemId().equals(systemId)
+                && assignments.stream().anyMatch(item -> item.authorityId().equals(authorityId))) {
+            throw new ApiException(ErrorCode.CONFLICT, authorityId);
+        }
+        AuthorityDefinition saved = new AuthorityDefinition(authorityId, name, request.active(),
+                systemId, classificationId, normalizeDescription(request.description()));
         AuthorityDefinition previous = authorities.put(authorityId, saved);
         if (!saved.equals(previous)) {
             authorityVersion.incrementAndGet();
         }
         return saved;
+    }
+
+    /** 분류 목록을 시스템·ID 순으로 반환해 화면에서 동일한 계층을 구성한다. */
+    public List<AuthorityClassification> classifications() {
+        return classifications.values().stream()
+                .sorted(Comparator.comparing(AuthorityClassification::systemId)
+                        .thenComparing(AuthorityClassification::id)).toList();
+    }
+
+    /** 시스템 간 연결, 자기/간접 순환 및 사용 중인 분류의 비활성화를 차단한다. */
+    public synchronized AuthorityClassification saveClassification(AuthorityClassification request) {
+        String id = normalizeId(request.id(), "classificationId");
+        String parentId = normalizeOptionalId(request.parentId(), "parentId");
+        String systemId = normalizeId(request.systemId(), "systemId");
+        String name = normalizeName(request.name());
+        Set<String> visited = new HashSet<>();
+        visited.add(id);
+        String next = parentId;
+        while (next != null) {
+            if (!visited.add(next)) {
+                throw new IllegalArgumentException("권한 분류에 순환 관계를 만들 수 없습니다.");
+            }
+            AuthorityClassification parent = classifications.get(next);
+            if (parent == null || !parent.active() || !parent.systemId().equals(systemId)) {
+                throw new ApiException(ErrorCode.CONFLICT, next);
+            }
+            next = parent.parentId();
+        }
+        boolean inUse = classifications.values().stream()
+                .anyMatch(item -> id.equals(item.parentId()) && item.active())
+                || authorities.values().stream()
+                .anyMatch(item -> id.equals(item.classificationId()) && item.active());
+        AuthorityClassification previous = classifications.get(id);
+        boolean referenced = classifications.values().stream().anyMatch(item -> id.equals(item.parentId()))
+                || authorities.values().stream().anyMatch(item -> id.equals(item.classificationId()));
+        if ((!request.active() && inUse) || (previous != null && referenced
+                && !previous.systemId().equals(systemId))) {
+            throw new ApiException(ErrorCode.CONFLICT, id);
+        }
+        AuthorityClassification saved = new AuthorityClassification(id, parentId, name, systemId, request.active());
+        classifications.put(id, saved);
+        authorityVersion.incrementAndGet();
+        return saved;
+    }
+
+    /** 사용 중인 연결을 남기지 않도록 자식과 연결 권한이 없는 분류만 삭제한다. */
+    public synchronized void deleteClassification(String classificationId) {
+        String id = normalizeId(classificationId, "classificationId");
+        if (!classifications.containsKey(id)) {
+            throw new ApiException(ErrorCode.RESOURCE_NOT_FOUND, id);
+        }
+        if (classifications.values().stream().anyMatch(item -> id.equals(item.parentId()))
+                || authorities.values().stream().anyMatch(item -> id.equals(item.classificationId()))) {
+            throw new ApiException(ErrorCode.CONFLICT, id);
+        }
+        classifications.remove(id);
+        authorityVersion.incrementAndGet();
     }
 
     /** 프로그램 마스터 한 건을 신규 등록하거나 표시명·설명·활성 상태를 수정한다. */
@@ -398,6 +487,9 @@ public class AuthorizationCatalog {
         UserProfile user = findUser(username)
                 .orElseThrow(() -> new ApiException(ErrorCode.RESOURCE_NOT_FOUND, username));
         String normalizedAuthorityId = normalizeId(authorityId, "authorityId");
+        if ("admin".equals(username) && AUTH_SYSTEM_ADMIN.equals(normalizedAuthorityId) && type == AssignmentType.DIRECT) {
+            throw new ApiException(ErrorCode.CONFLICT, "기본 관리자의 필수 권한은 회수할 수 없습니다.");
+        }
         AuthorityAssignment latest = assignments.stream()
                 .filter(item -> item.username().equals(username))
                 .filter(item -> item.organizationId().equals(user.organizationId()))
@@ -470,6 +562,12 @@ public class AuthorizationCatalog {
         Set<String> grants = authorityMenuGrants.computeIfAbsent(
                 normalizedAuthorityId, ignored -> ConcurrentHashMap.newKeySet());
         boolean changed = granted ? grants.add(normalizedMenuId) : grants.remove(normalizedMenuId);
+        if (!granted) {
+            Set<ProgramActionKey> actions = authorityActionGrants.get(normalizedAuthorityId);
+            if (actions != null && actions.removeIf(key -> key.menuId().equals(normalizedMenuId))) {
+                programVersion.incrementAndGet();
+            }
+        }
         if (changed) {
             menuVersion.incrementAndGet();
         }
@@ -645,7 +743,16 @@ public class AuthorizationCatalog {
     }
 
     /** 권한 마스터의 식별자, 표시명과 활성 상태다. */
-    public record AuthorityDefinition(String id, String name, boolean active) {
+    public record AuthorityDefinition(String id, String name, boolean active,
+            String systemId, String classificationId, String description) {
+        /** 기존 가상 권한은 INFO 시스템으로 분류하며 원본 운영 값을 가져오지 않는다. */
+        public AuthorityDefinition(String id, String name, boolean active) {
+            this(id, name, active, "INFO", null, "");
+        }
+    }
+
+    /** 원본 권한분류의 상위 관계, 시스템 범위와 사용 여부다. */
+    public record AuthorityClassification(String id, String parentId, String name, String systemId, boolean active) {
     }
 
     /** 프로그램 마스터의 식별자, 표시명, 설명과 활성 상태다. */
@@ -657,7 +764,9 @@ public class AuthorizationCatalog {
     }
 
     /** 사용자의 현재 조직을 포함한 최소 프로필이다. */
-    public record UserProfile(String username, String organizationId) {
+    public record UserProfile(String username, String organizationId, Boolean active) {
+        public UserProfile { if (active == null) active = true; }
+        public UserProfile(String username, String organizationId) { this(username, organizationId, true); }
     }
 
     /**
@@ -714,4 +823,29 @@ public class AuthorizationCatalog {
     /** 메뉴 ID만으로 다른 프로그램의 같은 기능명이 섞이지 않도록 사용하는 복합 키다. */
     public record ProgramActionKey(String menuId, String programId, String actionId) {
     }
+
+    @Override public String stateKey() { return "authorization"; }
+    @Override public Class<?> stateType() { return StoredState.class; }
+    @Override public Object snapshotState() {
+        return new StoredState(authorities(), classifications(), users(), List.copyOf(assignments), menus(),
+                allMenuGrants(), programs(), programActions(), allActionGrants(),
+                authorityVersion.get(), menuVersion.get(), programVersion.get());
+    }
+    @Override public void restoreState(Object raw) {
+        StoredState state = (StoredState) raw;
+        authorities.clear(); state.authorities().forEach(item -> authorities.put(item.id(), item));
+        classifications.clear(); state.classifications().forEach(item -> classifications.put(item.id(), item));
+        users.clear(); state.users().forEach(item -> users.put(item.username(), item));
+        assignments.clear(); assignments.addAll(state.assignments());
+        menus.clear(); state.menus().forEach(item -> menus.put(item.id(), item));
+        authorityMenuGrants.clear(); state.menuGrants().forEach(this::registerMenuGrants);
+        programs.clear(); state.programs().forEach(item -> programs.put(item.id(), item));
+        programActions.clear(); state.actions().forEach(item -> programActions.put(item.key(), item));
+        authorityActionGrants.clear(); state.actionGrants().forEach(this::registerActionGrants);
+        authorityVersion.set(state.authorityVersion()); menuVersion.set(state.menuVersion()); programVersion.set(state.programVersion());
+    }
+    public record StoredState(List<AuthorityDefinition> authorities, List<AuthorityClassification> classifications,
+            List<UserProfile> users, List<AuthorityAssignment> assignments, List<MenuDefinition> menus,
+            Map<String, Set<String>> menuGrants, List<ProgramDefinition> programs, List<ProgramActionDefinition> actions,
+            Map<String, Set<ProgramActionKey>> actionGrants, long authorityVersion, long menuVersion, long programVersion) { }
 }

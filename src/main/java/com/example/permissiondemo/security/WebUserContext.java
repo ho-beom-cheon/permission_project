@@ -36,6 +36,7 @@ public class WebUserContext implements CurrentUserContext {
             return Optional.empty();
         }
         return catalog.findUser(authentication.getName())
+                .filter(AuthorizationCatalog.UserProfile::active)
                 .map(profile -> new CurrentUser(
                         profile.username(),
                         profile.organizationId(),

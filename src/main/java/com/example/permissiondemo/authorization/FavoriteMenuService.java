@@ -17,11 +17,12 @@ import com.example.permissiondemo.web.ErrorCode;
 import org.springframework.stereotype.Service;
 
 /**
- * 사용자별 관심 메뉴를 인메모리로 관리하는 데모 서비스다.
+ * 사용자별 관심 메뉴와 변경 버전을 관리하며 로컬 저장 상태에 참여한다.
  * 관심 메뉴는 편의 정보일 뿐이므로 등록과 조회 시 현재 메뉴 접근 권한을 항상 다시 검사한다.
  */
 @Service
-public class FavoriteMenuService {
+@com.example.permissiondemo.storage.StateBoundary
+public class FavoriteMenuService implements com.example.permissiondemo.storage.StateParticipant {
 
     private static final Pattern MENU_PATTERN = Pattern.compile("[A-Z0-9_]{1,40}");
 
@@ -122,4 +123,18 @@ public class FavoriteMenuService {
     /** 관심 메뉴 화면에 필요한 식별자, 표시명과 이동 경로다. */
     public record FavoriteMenu(String menuId, String name, String path) {
     }
+
+    @Override public String stateKey() { return "favorites"; }
+    @Override public Class<?> stateType() { return StoredState.class; }
+    @Override public Object snapshotState() {
+        Map<String, Set<String>> values = new java.util.TreeMap<>();
+        favorites.forEach((key, value) -> values.put(key, Set.copyOf(value)));
+        return new StoredState(values);
+    }
+    @Override public void restoreState(Object raw) {
+        favorites.clear(); ((StoredState) raw).favorites().forEach((key, value) -> {
+            Set<String> items = ConcurrentHashMap.newKeySet(); items.addAll(value); favorites.put(key, items);
+        });
+    }
+    public record StoredState(Map<String, Set<String>> favorites) { }
 }

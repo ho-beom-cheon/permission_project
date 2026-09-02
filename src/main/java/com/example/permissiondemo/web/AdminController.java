@@ -33,6 +33,7 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @RequestMapping("/api/admin")
+@com.example.permissiondemo.storage.StateBoundary
 public class AdminController {
 
     private final AdminService adminService;
@@ -60,7 +61,9 @@ public class AdminController {
             @Valid @RequestBody AuthoritySaveRequest request) {
         return ApiResponse.ok(adminService.saveAuthority(
                 new AuthorizationCatalog.AuthorityDefinition(
-                        authorityId, request.name(), request.active())));
+                        authorityId, request.name(), request.active(),
+                        request.systemId() == null ? "INFO" : request.systemId(),
+                        request.classificationId(), request.description())));
     }
 
     /** 사용자에게 직접 또는 위임 권한을 승인 상태로 부여한다. */
@@ -209,7 +212,10 @@ public class AdminController {
     /** 권한 마스터 표시명과 사용 가능 여부를 저장하는 요청이다. */
     public record AuthoritySaveRequest(
             @NotBlank @Size(max = 100) String name,
-            @NotNull Boolean active) {
+            @NotNull Boolean active,
+            @Pattern(regexp = "[A-Z0-9_]{1,50}") String systemId,
+            @Pattern(regexp = "[A-Z0-9_]{1,50}") String classificationId,
+            @Size(max = 200) String description) {
     }
 
     /** 메뉴 마스터 한 건의 변경 가능한 속성이다. 메뉴 ID는 URL 경로에서 별도로 받는다. */

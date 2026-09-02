@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
  * 승인 상태, 적용 기간, 권한 마스터 활성 여부와 위임 원천 권한을 모두 통과해야 결과에 포함된다.
  */
 @Service
+@com.example.permissiondemo.storage.StateBoundary
 public class EffectiveAuthorityService {
 
     private final AuthorizationCatalog catalog;
@@ -46,7 +47,7 @@ public class EffectiveAuthorityService {
     public Set<String> findEffectiveAuthorityIds(String username) {
         LocalDate today = LocalDate.now(clock);
         Optional<AuthorizationCatalog.UserProfile> userProfile = catalog.findUser(username);
-        if (userProfile.isEmpty()) {
+        if (userProfile.isEmpty() || !userProfile.get().active()) {
             return Set.of();
         }
         String organizationId = userProfile.get().organizationId();
@@ -87,6 +88,7 @@ public class EffectiveAuthorityService {
     public boolean hasDirectAuthority(String username, String authorityId) {
         LocalDate today = LocalDate.now(clock);
         return catalog.findUser(username)
+                .filter(AuthorizationCatalog.UserProfile::active)
                 .map(AuthorizationCatalog.UserProfile::organizationId)
                 .map(organizationId -> hasValidDirectSource(
                         username, organizationId, authorityId, today))
@@ -106,6 +108,7 @@ public class EffectiveAuthorityService {
             return false;
         }
         boolean sameCurrentOrganization = catalog.findUser(delegatedBy)
+                .filter(AuthorizationCatalog.UserProfile::active)
                 .map(AuthorizationCatalog.UserProfile::organizationId)
                 .filter(organizationId::equals)
                 .isPresent();

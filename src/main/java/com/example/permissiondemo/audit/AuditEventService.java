@@ -17,13 +17,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
- * 로그인, 접근 거부와 관리 데이터 변경을 최근 순으로 보관하는 인메모리 감사 서비스다.
- * 데모에서는 최대 500건을 유지하며 실제 적용 시 append-only 저장소나 로그 수집기로 교체한다.
+ * 로그인, 접근 거부와 관리 데이터 변경을 최근 순으로 조회한다.
+ * 변경 이벤트는 업무 상태와 같은 로컬 저장 트랜잭션으로 보존한다.
  */
 @Service
-public class AuditEventService {
-
-    private static final int MAX_EVENTS = 500;
+@com.example.permissiondemo.storage.StateBoundary
+public class AuditEventService implements com.example.permissiondemo.storage.StateParticipant {
 
     private final ConcurrentLinkedDeque<AuditEvent> events = new ConcurrentLinkedDeque<>();
     private final AtomicLong sequence = new AtomicLong();
@@ -92,11 +91,8 @@ public class AuditEventService {
                 traceId,
                 Instant.now(clock),
                 Map.copyOf(details));
-        // 최신 이벤트를 앞에 넣고 오래된 이벤트부터 제거해 메모리 사용량을 제한한다.
+        // 최신 이벤트를 앞에 넣으며 기존 이력을 건수 기준으로 버리지 않는다.
         events.addFirst(event);
-        while (events.size() > MAX_EVENTS) {
-            events.pollLast();
-        }
     }
 
     /** 최신 이벤트가 먼저 오도록 저장된 순서를 유지한 채 요청 페이지를 반환한다. */
@@ -118,4 +114,13 @@ public class AuditEventService {
             Instant occurredAt,
             Map<String, ?> details) {
     }
+
+    @Override public String stateKey() { return "audit"; }
+    @Override public Class<?> stateType() { return StoredState.class; }
+    @Override public Object snapshotState() { return new StoredState(List.copyOf(events), sequence.get()); }
+    @Override public void restoreState(Object raw) {
+        StoredState state = (StoredState) raw;
+        events.clear(); events.addAll(state.events()); sequence.set(state.sequence());
+    }
+    public record StoredState(List<AuditEvent> events, long sequence) { }
 }

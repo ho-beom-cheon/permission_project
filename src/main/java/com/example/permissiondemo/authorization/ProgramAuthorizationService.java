@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
  * 화면 버튼 제어용 목록과 서버 {@code @PreAuthorize} 판정이 같은 기준 데이터를 사용한다.
  */
 @Service
+@com.example.permissiondemo.storage.StateBoundary
 public class ProgramAuthorizationService {
 
     private static final Logger log = LoggerFactory.getLogger(ProgramAuthorizationService.class);

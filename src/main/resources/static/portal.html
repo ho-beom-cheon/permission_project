@@ -35,14 +35,18 @@
     </div>
 
     <div class="header-actions">
+        <a class="icon-button" href="/authority-requests.html">권한 신청</a>
+        <a class="icon-button" href="/community.html">게시판</a>
+        <a class="icon-button" href="/my-page.html">내 정보·일정</a>
+        <a class="icon-button" href="/help.html">도움말</a>
         <button id="btnSync" class="icon-button" type="button" title="최신 권한과 메뉴 반영">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5"/><path d="M6.1 8.2A7 7 0 0 1 18.7 7M17.9 15.8A7 7 0 0 1 5.3 17"/></svg>
             <span class="desktop-only">권한 새로고침</span>
         </button>
-        <button class="icon-button notification-button" type="button" title="알림">
+        <a class="icon-button notification-button" href="/notices.html" title="내 알림">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg>
-            <i aria-label="읽지 않은 알림 3건">3</i>
-        </button>
+            <i id="noticeCount" aria-label="읽지 않은 알림 건수">0</i>
+        </a>
         <div class="profile-box">
             <span id="userAvatar" class="user-avatar">U</span>
             <span class="profile-copy"><strong id="portalUsername">사용자 확인 중</strong><small id="portalOrg">조직 확인 중</small></span>
@@ -109,18 +113,13 @@
                 </section>
 
                 <section class="content-card notice-card">
-                    <div class="section-heading"><div><span>NOTICE</span><h2>공지사항</h2></div><a href="#content">더보기</a></div>
-                    <div class="notice-list">
-                        <a href="#content"><b>안내</b><span>통합 권한관리 서비스 사용자 안내</span><time>2026.09.01</time></a>
-                        <a href="#content"><b>점검</b><span>업무 시스템 정기 점검 일정 안내</span><time>2026.08.28</time></a>
-                        <a href="#content"><b>자료</b><span>개인정보 보호 및 보안 준수사항</span><time>2026.08.20</time></a>
-                        <a href="#content"><b>소식</b><span>전자결재 서비스 개선사항 안내</span><time>2026.08.14</time></a>
-                    </div>
+                    <div class="section-heading"><div><span>NOTICE</span><h2>공지사항</h2></div><a href="/community.html?board=NOTICE">더보기</a></div>
+                    <div id="noticeList" class="notice-list"></div>
                 </section>
 
                 <section class="content-card schedule-card">
                     <div class="section-heading"><div><span>MY SCHEDULE</span><h2>오늘의 일정</h2></div><strong id="todayDay">01</strong></div>
-                    <ul><li><time>09:30</time><span>주간 업무회의</span></li><li><time>13:30</time><span>서비스 운영 점검</span></li><li><time>16:00</time><span>권한 변경사항 검토</span></li></ul>
+                    <ul id="todaySchedules"></ul>
                 </section>
             </div>
         </section>
@@ -130,11 +129,11 @@
             <div class="page-head"><div><p>홈 / 업무 서비스 / 콘텐츠</p><h1>콘텐츠 관리</h1><span>권한에 따라 조회·작성·게시 기능이 자동으로 조정됩니다.</span></div><button class="secondary-button" data-go-home type="button">홈으로</button></div>
             <section class="content-card work-card">
                 <div class="toolbar">
-                    <div class="filter-group"><select aria-label="검색 조건"><option>제목</option><option>작성자</option><option>상태</option></select><input type="search" placeholder="검색어를 입력하세요"><button id="btnContentRead" data-protected type="button" disabled>조회</button></div>
-                    <div class="work-actions"><button id="btnContentSave" data-protected type="button" disabled>새 콘텐츠 작성</button><button id="btnContentPublish" data-protected type="button" disabled>선택 게시</button></div>
+                    <div class="filter-group"><input id="contentSearch" type="search" aria-label="공지 검색" placeholder="제목 또는 내용 검색"><button id="btnContentRead" data-protected type="button" disabled>조회</button></div>
+                    <div class="work-actions"><button id="btnContentSave" data-protected type="button" disabled>새 콘텐츠 작성</button><button id="btnContentPublish" data-protected type="button" disabled>게시글 관리</button></div>
                 </div>
                 <div class="table-scroll"><table><thead><tr><th><input type="checkbox" aria-label="전체 선택"></th><th>번호</th><th>구분</th><th>제목</th><th>상태</th><th>작성자</th><th>등록일</th></tr></thead><tbody id="contentRows"></tbody></table></div>
-                <div class="pagination"><button type="button" disabled>‹</button><button class="current" type="button">1</button><button type="button">2</button><button type="button">3</button><button type="button">›</button></div>
+                <div class="pagination"><a href="/community.html">전체 게시글 조회·페이지 이동</a></div>
             </section>
         </section>
 

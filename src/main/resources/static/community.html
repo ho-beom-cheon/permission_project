@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>게시판 | ARISU Works</title><link rel="icon" href="data:,"><link rel="stylesheet" href="/authority-requests.css">
+<script type="module" src="/community.js"></script></head>
+<body><header><div><small>ARISU WORKS</small><h1>게시판</h1></div><nav><a href="/portal.html">사용자 홈</a><a href="/my-page.html">내 정보·일정</a><a href="/management.html">공통 업무 관리</a><a href="/boards.html">게시판 구분 관리</a></nav></header>
+<main><p id="feedback" role="status" aria-live="polite">게시글을 확인하고 있습니다.</p>
+<section><div class="form-grid"><label>게시판<select id="board"><option value="NOTICE">공지사항</option><option value="FAQ">자주 묻는 질문</option><option value="QNA">질문과 답변</option><option value="DOCUMENT">자료실</option><option value="TERMS">이용약관</option></select></label>
+<label>검색어<input id="query" type="search" maxlength="200"></label></div><div class="actions"><button id="search" type="button">조회</button><button id="new" type="button" disabled>새 글 작성</button></div>
+<div class="table-wrap"><table><thead><tr><th>제목</th><th>작성자</th><th>게시 상태</th><th>작성일</th><th>조회</th></tr></thead><tbody id="rows"></tbody></table></div>
+<div class="pagination"><button id="previous">이전</button><span id="pageInfo"></span><button id="next">다음</button></div></section>
+<section id="detail" hidden><h2 id="postTitle"></h2><p id="postMeta"></p><div id="postBody" style="white-space:pre-wrap;overflow-wrap:anywhere"></div>
+<ul id="postFiles"></ul><div id="answerView" hidden><h3>답변</h3><p id="answerBody" style="white-space:pre-wrap"></p></div>
+<div class="actions"><button id="editPost">수정</button><button id="deletePost" class="secondary">삭제</button><button id="agree" hidden>이 약관에 동의</button></div>
+<form id="answerForm" hidden><label>담당자 답변<textarea id="answer" rows="5" maxlength="100000" required></textarea></label><button type="submit">답변 저장</button></form></section>
+<section id="editorSection" hidden><h2 id="editorTitle">새 글 작성</h2><form id="editor">
+<label>제목<input id="title" maxlength="200" required></label><label>내용<textarea id="body" rows="12" maxlength="100000" required></textarea></label>
+<div class="form-grid"><label>게시 시작일<input id="startDate" type="date"></label><label>게시 종료일<input id="endDate" type="date"></label><label id="versionField" hidden>약관 버전<input id="versionLabel" maxlength="50"></label></div>
+<div class="choices"><label class="check"><input id="published" type="checkbox">게시</label><label class="check"><input id="publicRead" type="checkbox" checked>다른 사용자에게 공개</label><label class="check"><input id="pinned" type="checkbox">상단 고정</label></div>
+<p>게시된 약관은 동의 이력 보존을 위해 수정·삭제할 수 없습니다. 변경 내용은 새 버전으로 등록하세요.</p>
+<label><span id="fileLimit">첨부파일 (각 10MB)</span><input id="file" type="file" multiple></label><ul id="editingFiles"></ul>
+<div class="actions"><button id="savePost" type="submit">저장</button><button id="cancelEdit" type="button" class="secondary">작성 취소</button></div></form></section>
+<section id="agreementsSection" hidden><h2>내 약관 동의 이력</h2><ul id="agreements"></ul></section>
+</main></body></html>

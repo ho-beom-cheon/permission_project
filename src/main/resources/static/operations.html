@@ -1,0 +1,10 @@
+<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>과업·이슈 | ARISU Works</title><link rel="icon" href="data:,"><link rel="stylesheet" href="/authority-requests.css"><script type="module" src="/operations.js"></script></head>
+<body><header><div><small>ARISU WORKS</small><h1>과업·이슈 관리</h1></div><nav><a href="/portal.html">사용자 홈</a><a href="/management.html">공통 업무 관리</a><a href="/community.html">게시판</a></nav></header><main><p id="feedback" role="status" aria-live="polite">과업·이슈를 확인하고 있습니다.</p>
+<section><div class="form-grid"><label>관리 업무<select id="type"></select></label><label>검색어<input id="query" type="search" maxlength="200"></label></div><div class="actions"><button id="search" type="button">조회</button><button id="new" type="button">새로 등록</button></div>
+<div class="table-wrap"><table><thead><tr><th>번호</th><th>제목</th><th>상태 코드</th><th>수정일</th><th>상세</th></tr></thead><tbody id="rows"></tbody></table></div><div class="pagination"><button id="previous">이전</button><span id="pageInfo"></span><button id="next">다음</button></div></section>
+<section><h2 id="editorTitle">입력</h2><form id="editor"><div id="fields" class="form-grid"></div>
+<fieldset><legend>요청 첨부</legend><label>요청 파일 추가<input id="requestUpload" type="file" multiple></label><ul id="requestFiles"></ul></fieldset>
+<fieldset><legend>처리 첨부</legend><label>처리 파일 추가<input id="responseUpload" type="file" multiple></label><ul id="responseFiles"></ul></fieldset>
+<div class="actions"><button id="save" type="submit">저장</button><button id="delete" type="button" class="secondary" hidden>삭제</button></div></form>
+<h3>변경 이력</h3><ul id="history"></ul></section>
+</main></body></html>

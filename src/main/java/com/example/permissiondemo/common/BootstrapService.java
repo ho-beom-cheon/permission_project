@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
  * 클라이언트가 여러 API를 순차 호출하면서 서로 다른 시점의 권한 상태를 받는 문제를 줄인다.
  */
 @Service
+@com.example.permissiondemo.storage.StateBoundary
 public class BootstrapService {
 
     private static final int MAX_CODE_GROUPS = 10;

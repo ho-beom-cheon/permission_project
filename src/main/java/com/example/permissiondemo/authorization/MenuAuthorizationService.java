@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
  * 메뉴 표시 여부와 실제 접근 가능 여부를 분리해 상위 컨테이너 노출이 권한 상승으로 이어지지 않게 한다.
  */
 @Service
+@com.example.permissiondemo.storage.StateBoundary
 public class MenuAuthorizationService {
 
     private final AuthorizationCatalog catalog;

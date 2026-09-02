@@ -15,12 +15,8 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.SavedRequestAwareAuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler;
@@ -36,6 +32,14 @@ import org.springframework.security.web.util.matcher.RequestMatcher;
 @Profile("demo")
 public class SecurityConfig {
 
+    @Bean org.springframework.security.core.session.SessionRegistry sessionRegistry() {
+        return new org.springframework.security.core.session.SessionRegistryImpl();
+    }
+
+    @Bean org.springframework.security.web.session.HttpSessionEventPublisher sessionEvents() {
+        return new org.springframework.security.web.session.HttpSessionEventPublisher();
+    }
+
     /**
      * 웹 보안 필터 체인을 구성한다.
      * API 실패는 HTML 리다이렉트가 아닌 표준 JSON으로 반환하고 모든 보안 이벤트를 감사 이력에 남긴다.
@@ -45,7 +49,8 @@ public class SecurityConfig {
             HttpSecurity http,
             ApiErrorWriter errorWriter,
             AuditEventService auditEventService,
-            AuthorizationCatalog catalog) throws Exception {
+            AuthorizationCatalog catalog,
+            org.springframework.security.core.session.SessionRegistry sessionRegistry) throws Exception {
         // 로그인 화면과 일반 페이지는 HTML 흐름을 사용하고 /api 하위 요청만 JSON 오류 처리 대상으로 삼는다.
         RequestMatcher apiRequest = request -> {
             String contextPath = request.getContextPath();
@@ -73,6 +78,12 @@ public class SecurityConfig {
                         // API는 업무 권한과 별개로 우선 로그인 세션이 있어야 한다.
                         .requestMatchers("/api/**").authenticated()
                         .anyRequest().authenticated())
+                .sessionManagement(session -> session.maximumSessions(-1).sessionRegistry(sessionRegistry)
+                        .expiredSessionStrategy(event -> {
+                            var request = event.getRequest(); var response = event.getResponse();
+                            if (apiRequest.matches(request)) errorWriter.write(request,response,ErrorCode.UNAUTHENTICATED);
+                            else response.sendRedirect(request.getContextPath()+"/login");
+                        }))
                 .formLogin(form -> form
                         // GET /login은 자체 화면을 사용하고 POST /login은 Security가 인증 처리한다.
                         .loginPage("/login")
@@ -154,6 +165,9 @@ public class SecurityConfig {
                                 },
                                 apiRequest));
 
+        http.addFilterAfter(new CurrentAccountFilter(catalog, errorWriter),
+                org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class);
+
         // CSRF, 세션 고정 공격 방어, 보안 헤더는 Spring Security 기본값을 사용한다.
         return http.build();
     }
@@ -162,32 +176,6 @@ public class SecurityConfig {
     @Bean
     PasswordEncoder passwordEncoder() {
         return PasswordEncoderFactories.createDelegatingPasswordEncoder();
-    }
-
-    /**
-     * 로컬 테스트 전용 사용자와 암호화된 비밀번호를 메모리에 구성한다.
-     * 운영 적용 시 이 빈을 사내 인증·SSO 연계 UserDetailsService로 교체해야 한다.
-     */
-    @Bean
-    UserDetailsService userDetailsService(PasswordEncoder passwordEncoder) {
-        return new InMemoryUserDetailsManager(
-                demoUser("admin", "admin123!", passwordEncoder),
-                demoUser("manager", "manager123!", passwordEncoder),
-                demoUser("viewer", "viewer123!", passwordEncoder),
-                demoUser("delegate", "delegate123!", passwordEncoder),
-                demoUser("expired", "expired123!", passwordEncoder));
-    }
-
-    /** 인증용 공통 역할만 가진 데모 UserDetails를 생성한다. */
-    private UserDetails demoUser(
-            String username,
-            String rawPassword,
-            PasswordEncoder passwordEncoder) {
-        // ROLE_AUTHENTICATED_USER는 로그인 여부만 나타내며 업무 권한을 직접 부여하지 않는다.
-        return User.withUsername(username)
-                .password(passwordEncoder.encode(rawPassword))
-                .roles("AUTHENTICATED_USER")
-                .build();
     }
 
     /** 보안 필터 단계의 사건에 사용자 조직과 요청 추적 정보를 결합해 감사 이벤트를 기록한다. */

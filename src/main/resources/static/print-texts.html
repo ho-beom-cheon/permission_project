@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>출력문구 관리 | ARISU Works</title><link rel="icon" href="data:,"><link rel="stylesheet" href="/authority-requests.css"><script type="module" src="/print-texts.js"></script></head>
+<body><header><div><small>ARISU WORKS</small><h1>출력문구 관리</h1></div><nav><a href="/portal.html">사용자 홈</a><a href="/management.html">공통 관리</a><a href="/codes.html">공통코드</a></nav></header>
+<main><p id="feedback" role="status" aria-live="polite">출력문구를 확인하고 있습니다.</p>
+<section><div class="form-grid"><label>사업소<select id="officeFilter"></select></label><label>업무<select id="jobFilter"></select></label></div>
+<div class="actions"><button id="search">조회</button><button id="new">새 묶음</button></div>
+<div class="table-wrap"><table><thead><tr><th>사업소</th><th>업무</th><th>상세업무</th><th>문구 수</th><th>버전</th><th>편집</th></tr></thead><tbody id="rows"></tbody></table></div>
+<div class="pagination"><button id="previous">이전</button><span id="pageInfo"></span><button id="next">다음</button></div></section>
+<section id="editorSection" hidden><h2 id="editorTitle">출력문구 입력</h2><p>업무는 CM013, 상세업무는 CM040의 사용 중인 코드를 선택합니다. 상세코드의 앞 두 자리가 업무코드와 같아야 합니다.</p>
+<form id="editor"><div class="form-grid"><label>사업소<select id="officeCd" required></select></label><label>업무<select id="jobSeCd" required></select></label><label>상세업무<select id="jobSeDetailCd" required></select></label></div>
+<p>문구는 행마다 100자까지 입력할 수 있습니다. 행 삭제는 저장할 때 반영됩니다.</p>
+<div class="table-wrap"><table><thead><tr><th>순번</th><th>출력문구</th><th>행 삭제</th></tr></thead><tbody id="lines"></tbody></table></div>
+<div class="actions"><button id="addLine" type="button">문구 추가</button><button id="save" type="submit">묶음 저장</button><button id="delete" type="button" class="secondary" hidden>묶음 삭제</button><button id="cancel" type="button" class="secondary">취소</button></div></form></section>
+</main></body></html>

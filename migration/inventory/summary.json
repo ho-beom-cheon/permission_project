@@ -1,0 +1,37 @@
+{
+  "source_root": "C:/arisuinfo",
+  "scopes": {
+    "java-cm": "src/main/java/arisuinfo/cm",
+    "java-com": "src/main/java/arisuinfo/com",
+    "java-common": "src/main/java/arisuinfo/common",
+    "mapper-cm": "src/main/resources/mappers/arisuinfo/cm",
+    "mapper-com": "src/main/resources/mappers/arisuinfo/com",
+    "screen-cm": "src/main/nexacro/form/cm",
+    "screen-common": "src/main/nexacro/common",
+    "screen-frame": "src/main/nexacro/frame",
+    "script-common": "src/main/nexacro/_extlib_/arisuInfo"
+  },
+  "missing_scope_directories": [],
+  "files_by_scope": {
+    "java-cm": 344,
+    "java-com": 120,
+    "java-common": 62,
+    "mapper-cm": 57,
+    "mapper-com": 4,
+    "screen-cm": 129,
+    "screen-common": 5,
+    "screen-frame": 13,
+    "script-common": 15
+  },
+  "files": 749,
+  "endpoint_candidates": 383,
+  "sql_statements": 493,
+  "screens": 147,
+  "external_dependency_candidates": 12,
+  "notes": [
+    "Source discovery only; all parity statuses require manual verification.",
+    "Mapping annotations may be class prefixes; compose with method mappings during review.",
+    "SQL includes reusable fragments; counts are not business feature counts.",
+    "Missing or external scopes are not automatically excluded from migration."
+  ]
+}

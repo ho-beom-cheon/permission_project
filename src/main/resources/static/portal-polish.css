@@ -65,6 +65,25 @@ body {
 .sidebar-user strong { font-size: 15px; }
 .sidebar-user span { margin-top: 12px; font-size: 11px; }
 .nav-caption { padding: 0 12px 10px; font-size: 10px; }
+.portal-sidebar nav {
+    padding: 8px;
+    border: 1px solid #dce7f3;
+    border-radius: 14px;
+    background: #f3f7fc;
+}
+.portal-sidebar > nav > ul > li {
+    margin: 0 0 5px;
+    border: 1px solid #e0e8f2;
+    border-radius: 10px;
+    background: #fff;
+}
+.portal-sidebar > nav > ul > li:last-child { margin-bottom: 0; }
+.portal-sidebar > nav ul ul {
+    margin-right: 7px;
+    margin-bottom: 7px;
+    border-radius: 7px;
+    background: #f8fbfe;
+}
 .portal-sidebar ul ul { margin-left: 22px; }
 .portal-sidebar a,
 .portal-sidebar li > span {
@@ -148,6 +167,8 @@ body {
 .work-card td { height: 56px; padding: 11px 14px; font-size: 13px; }
 .work-card th { color: #53677d; background: #f6f8fb; font-size: 12px; }
 .work-card td:nth-child(4) { color: #263a53; font-weight: 700; }
+.work-card tbody tr { cursor: pointer; }
+.work-card tbody tr.is-selected td { background: #cfe4ff; }
 .state-badge { padding: 6px 10px; font-size: 11px; }
 .pagination { margin-top: 22px; }
 .pagination button { width: 36px; height: 36px; font-size: 12px; }
@@ -203,3 +224,61 @@ body {
     .toolbar button { min-height: 46px; font-size: 14px; }
     .work-actions button { min-width: 0; }
 }
+
+/* 남색은 현재 위치와 주요 행동에만 쓰고, 나머지 화면은 밝은 업무 화면으로 정리한다. */
+:root {
+    --blue-900: #102a46;
+    --blue-700: #1d4d7b;
+    --blue-600: #2d628f;
+    --blue-100: #edf3f8;
+    --navy: #102a46;
+    --text: #182b40;
+    --muted: #718196;
+    --line: #dce4ec;
+    --soft: #f7f9fb;
+}
+body { background: var(--soft); }
+.portal-header { border-bottom-color: var(--line); background: #fff; box-shadow: 0 1px 0 rgba(16,42,70,.04); }
+.header-brand { border-right-color: var(--line); }
+.brand-link, .profile-copy strong { color: var(--navy); }
+.brand-link small, .profile-copy small { color: var(--muted); }
+.brand-symbol { background: var(--navy); box-shadow: none; }
+.brand-symbol svg { fill: rgba(255,255,255,.12); stroke: #fff; }
+.header-search { border-color: #d7e0e9; background: #f7f9fb; }
+.header-search:focus-within { border-color: #8ba7c1; box-shadow: 0 0 0 3px rgba(16,42,70,.08); }
+.portal-sidebar { border-right-color: var(--line); color: var(--text); background: #fff; }
+.sidebar-user { border-color: #dce5ee; background: #f5f8fb; }
+.sidebar-user p, .sidebar-user strong { color: var(--navy); }
+.sidebar-user span { color: #52718e; }
+.sidebar-user i { background: #2d628f; box-shadow: 0 0 0 4px rgba(45,98,143,.1); }
+.nav-caption { color: #7a8ca0; }
+.portal-sidebar nav { padding: 0; border: 0; border-radius: 0; background: transparent; }
+.portal-sidebar > nav > ul > li { margin: 2px 0; border: 0; border-radius: 0; background: transparent; }
+.portal-sidebar > nav ul ul { margin-right: 0; margin-bottom: 8px; border-radius: 0; background: transparent; }
+.portal-sidebar ul ul { border-left-color: #d8e2ec; }
+.portal-sidebar a, .portal-sidebar li > span { color: #4a6178; }
+.portal-sidebar li > span { color: var(--navy); }
+.portal-sidebar a::before, .portal-sidebar li > span::before { border-color: #8fa4b8; }
+.portal-sidebar a:hover { color: var(--navy); background: #edf3f8; transform: none; }
+.portal-sidebar a[aria-current="page"] { color: #fff; background: var(--navy); box-shadow: none; }
+.portal-sidebar a[aria-current="page"]::before { border-color: #fff; background: #fff; box-shadow: none; }
+.portal-main { background: var(--soft); }
+.welcome-panel { min-height: 226px; border-radius: 16px; background: linear-gradient(112deg, #102a46, #173c60); box-shadow: none; }
+.welcome-label { color: #c8d8e7; }
+.welcome-copy h1 em { color: #dce8f2; }
+.welcome-copy > p { color: #d3e0eb; }
+.summary-card, .content-card { border-color: var(--line); border-radius: 12px; box-shadow: none; }
+.summary-card { background: #fff; }
+.summary-card.blue .summary-icon,
+.summary-card.violet .summary-icon,
+.summary-card.green .summary-icon,
+.summary-card.orange .summary-icon { color: var(--navy); background: #edf3f8; }
+.service-tile { border-color: #e0e7ee; border-radius: 10px; background: #fff; }
+.service-tile:hover { border-color: #aebfd0; background: #f8fafc; box-shadow: none; transform: none; }
+.service-tile i, .generic-hero i, .schedule-card .section-heading > strong { color: var(--navy); background: #edf3f8; }
+.section-heading > small, .state-badge, .notice-list b { color: #1d4d7b; background: #edf3f8; }
+.generic-hero, .manage-page .generic-hero { border-color: var(--line); background: #fff; }
+.manage-page .generic-hero i { color: var(--navy); background: #edf3f8; }
+.manage-link, .work-actions button:last-child { background: var(--navy); }
+.manage-link:hover { background: #1d4d7b; }
+.state-badge.published, .state-badge.deleted { color: #1d4d7b; background: #edf3f8; }

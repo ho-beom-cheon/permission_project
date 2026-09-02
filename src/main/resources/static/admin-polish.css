@@ -130,8 +130,9 @@ th,
 td { padding: 15px 17px; line-height: 1.5; }
 th { color: #56677d; font-size: 12px; letter-spacing: .02em; }
 td { color: #4a5d74; font-size: 13px; }
-tbody tr { transition: background .15s; }
+tbody tr { cursor: pointer; transition: background .15s; }
 tbody tr:hover { background: #f4f8fd; }
+tbody tr.is-selected td { color: #174f92; background: #cfe4ff; }
 
 .console-header { padding: 18px 22px; }
 .console-header h2 { font-size: 16px; }
@@ -193,3 +194,345 @@ pre { min-height: 190px; padding: 24px; font-size: 12px; }
     td { padding: 14px; font-size: 13px; }
     pre { padding: 18px; font-size: 11px; }
 }
+
+/*
+ * 행정 업무 화면 공통 셸
+ * 서버 연동과 화면 ID는 유지하고, 카드형 데모 UI를 표·상세 편집 중심의 관리 화면으로 재구성한다.
+ */
+:root {
+    --office-navy: #193f78;
+    --office-blue: #397bd5;
+    --office-mint: #00a88f;
+    --office-line: #cfd8e5;
+    --office-label: #f5f7fa;
+    --office-text: #202938;
+    background: #fff;
+}
+
+body { background: #fff; color: var(--office-text); font-size: 13px; }
+.topbar {
+    position: relative;
+    z-index: 31;
+    min-height: 4px;
+    height: 4px;
+    padding: 0;
+    border-bottom: 0;
+    background: #e8eef7;
+    box-shadow: none;
+}
+.topbar > * { display: none; }
+.workspace-tabs {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    display: flex;
+    align-items: end;
+    height: 40px;
+    padding-left: 280px;
+    overflow: hidden;
+    border-bottom: 1px solid #aebdd2;
+    background: #e8eef7;
+}
+.tab-menu-toggle {
+    align-self: stretch;
+    width: 36px;
+    border: 0;
+    border-right: 1px solid #bfcbdb;
+    border-radius: 0;
+    color: #4d6584;
+    background: transparent;
+    font-size: 17px;
+}
+.workspace-tab-list { display: flex; align-self: stretch; min-width: 0; overflow-x: auto; }
+.workspace-tab {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    align-self: stretch;
+    min-width: 150px;
+    padding: 0 13px;
+    border-right: 1px solid #b7c5d9;
+    color: #5f7592;
+    background: #dce6f3;
+    font-size: 13px;
+    text-decoration: none;
+}
+.workspace-tab-label, .workspace-tab-close {
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    color: inherit;
+    background: transparent;
+    box-shadow: none;
+    font-size: inherit;
+}
+.workspace-tab-label { flex: 1; overflow: hidden; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
+.workspace-tab-close { width: 20px; color: #8da1bc; font-size: 16px; font-weight: 300; }
+.workspace-tab-label:hover, .workspace-tab-close:hover { color: #2775d5; background: transparent; }
+.workspace-tab.is-active { position: relative; color: #2871d0; background: #fff; }
+.workspace-tab.is-active::before { position: absolute; top: 0; right: 0; left: 0; height: 2px; background: #3d82df; content: ""; }
+
+.layout { grid-template-columns: 280px minmax(0, 1fr); min-height: calc(100vh - 44px); }
+.sidebar {
+    position: sticky;
+    top: 40px;
+    height: calc(100vh - 40px);
+    padding: 0;
+    overflow: hidden auto;
+    color: #273345;
+    background: #fff;
+    border-right: 1px solid #cbd5e2;
+}
+.brand {
+    min-height: 57px;
+    margin: 0;
+    padding: 11px 16px;
+    border-bottom: 1px solid #d5deea;
+    background: #f5f8fc;
+}
+.brand-mark { width: 34px; height: 34px; border-radius: 4px; background: var(--office-navy); box-shadow: none; }
+.brand-mark svg { width: 20px; }
+.brand strong { color: #27446f; font-size: 14px; }
+.brand span { margin-top: 1px; color: #8a98aa; font-size: 8px; }
+.sidebar-label { display: none; }
+#menuTree {
+    min-height: auto;
+    padding: 8px;
+    background: #eef3f9;
+}
+.sidebar ul ul { margin: 0; padding: 0; border-left: 0; }
+.sidebar li { margin: 0 0 4px; border: 1px solid #dbe4ef; background: #f8fbfe; }
+.sidebar a, .sidebar li > span {
+    min-height: 37px;
+    padding: 8px 17px;
+    border-radius: 0;
+    color: #293442;
+    font-size: 13px;
+    font-weight: 650;
+}
+.sidebar ul ul { margin: 0; background: #fff; }
+.sidebar ul ul li { margin: 0; border-width: 1px 0 0; background: #fff; }
+.sidebar ul ul a, .sidebar ul ul li > span { padding-left: 34px; color: #55657a; font-size: 12px; }
+.sidebar a::before, .sidebar li > span::before { width: 0; height: 0; margin-right: 7px; border: 0; border-left: 4px solid #98a9bd; border-radius: 0; }
+.sidebar ul ul a::before { width: 7px; height: 7px; border: 1px solid #9aaabd; border-radius: 2px; }
+.sidebar a:hover, .sidebar a[aria-current="page"] { color: #1763ba; background: #edf3fb; transform: none; }
+.sidebar a:focus-visible { outline: 2px solid #2d78d0; outline-offset: -2px; }
+.sidebar a:hover::before { box-shadow: none; }
+.sidebar-guide, .system-state { display: none; }
+
+main {
+    display: block;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 14px 24px 34px;
+    background: #fff;
+}
+/* 탭에 대응하는 페이지 패널만 본문 흐름에 남긴다. hidden 속성이 제거돼도 다른 화면이 노출되지 않게 한다. */
+main > .workspace-page { display: none !important; }
+main > .workspace-page.is-page-active { display: block !important; }
+main > .workspace-page[hidden] { display: none !important; }
+.hero {
+    display: block;
+    min-height: 0;
+    margin-bottom: 10px;
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+    color: var(--office-text);
+    background: transparent;
+    box-shadow: none;
+}
+.hero::before, .hero-graphic, .hero-status { display: none; }
+.hero-copy { padding: 0; }
+.hero h2 { margin: 0; color: #161d28; font-size: 19px; line-height: 1.4; }
+.hero h2::before { color: #f2bb2c; content: "★ "; font-size: 16px; }
+.hero h2 br, .hero h2 em { display: none; }
+.hero p { display: inline; margin: 0 0 0 13px; color: #6d7786; font-size: 12px; }
+.hero a { display: none; }
+
+.card, .authority-summary, .accounts-card, .result-card, .favorite-card, .code-card {
+    display: block;
+    margin: 0 0 16px;
+    padding: 0;
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    scroll-margin-top: 52px;
+}
+.card:hover { border-color: transparent; box-shadow: none; transform: none; }
+.card-kicker { display: none; }
+.card h2 {
+    margin: 0;
+    padding: 7px 0;
+    border-bottom: 2px solid #3d7fe0;
+    color: #151b25;
+    font-size: 16px;
+}
+.card h2::before { color: #6d7e93; content: "▪ "; }
+.card > p { margin: 0; padding: 11px 14px; border: 1px solid #75a8ed; border-top: 0; color: #667385; background: #fbfdff; font-size: 12px; line-height: 1.45; }
+.authority-summary { padding: 0; background: transparent; }
+.authority-summary::before { display: none; }
+.authority-summary > p { grid-column: auto; }
+.badges { justify-content: flex-start; margin: 0; padding: 10px 12px; border: 1px solid var(--office-line); border-top: 0; }
+.badge { padding: 4px 8px; border: 1px solid #abc8ee; border-radius: 2px; color: #266bc3; background: #eef6ff; font-size: 11px; }
+.permission-card::after { display: none; }
+.actions, .section-actions { justify-content: flex-end; gap: 5px; margin: 9px 0; }
+.actions button, .code-form button, #btnCommonCodeSave {
+    min-height: 29px;
+    padding: 4px 12px;
+    border: 0;
+    border-radius: 5px;
+    color: #fff;
+    background: #4786dc;
+    box-shadow: none;
+    font-size: 12px;
+}
+.actions button:hover:not(:disabled), .code-form button:hover:not(:disabled), #btnCommonCodeSave:hover:not(:disabled) { background: #2f72cf; box-shadow: none; transform: none; }
+.actions button:disabled, .code-form button:disabled { color: #9aa5b3; background: #e5e9ef; }
+.actions .danger-outline, #btnFavoriteRemove { color: #fff; border: 0; background: #8e98a7; }
+.test-actions { padding: 0; border: 0; }
+
+.table-wrap { margin: 0; overflow: auto; border: 1px solid var(--office-line); border-radius: 0; }
+table { min-width: 680px; border: 0; border-radius: 0; }
+th, td { padding: 6px 10px; border-right: 1px solid var(--office-line); border-bottom: 1px solid var(--office-line); line-height: 1.45; }
+th:last-child, td:last-child { border-right: 0; }
+th { color: #202938; background: #f3f5f8; font-size: 12px; font-weight: 700; text-align: center; }
+td { color: #283342; background: #fff; font-size: 12px; }
+td:first-child { color: #283342; font-weight: 500; }
+td:nth-child(2) { color: #283342; font-family: inherit; }
+tbody tr:hover td, tbody tr:focus-within td { background: #dceaff; }
+tbody tr.is-selected td { color: #174f92; background: #bcdcff; }
+
+.code-form {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(150px, 1fr));
+    grid-auto-rows: 36px;
+    gap: 0;
+    margin: 10px 0 0;
+    border: 1px solid var(--office-line);
+    /* 마지막 줄이 네 칸을 모두 쓰지 않아도 빈 영역까지 표 셀처럼 마감한다. */
+    background-color: #fff;
+    background-image:
+        linear-gradient(to right, transparent calc(100% - 1px), var(--office-line) calc(100% - 1px)),
+        linear-gradient(to bottom, transparent calc(100% - 1px), var(--office-line) calc(100% - 1px));
+    background-size: 25% 100%, 100% 36px;
+    background-position: 0 0;
+}
+.code-form label {
+    display: grid;
+    grid-template-columns: 88px minmax(0, 1fr);
+    align-items: center;
+    min-height: 36px;
+    gap: 0;
+    /* 표 경계에 라벨이 붙어 보이지 않도록 셀 안쪽 여백을 확보한다. */
+    padding: 0 12px;
+    border-right: 1px solid var(--office-line);
+    border-bottom: 1px solid var(--office-line);
+    color: #f04c70;
+    background: var(--office-label);
+    font-size: 12px;
+    font-weight: 700;
+}
+.code-form label:last-of-type { border-right: 0; }
+.code-form input[type="checkbox"] { width: 17px; height: 17px; min-height: 17px; margin: 0 10px; accent-color: #f04c70; }
+input, select {
+    min-height: 28px;
+    padding: 3px 7px;
+    border: 1px solid #cbd4df;
+    border-radius: 3px;
+    color: #222b39;
+    background: #fff;
+    font-size: 12px;
+    box-shadow: none;
+}
+/*
+ * 편집 행의 마지막 칸까지 테두리를 유지한다. 버튼을 셀 안에서 따로 띄우면
+ * 마지막 열과 다음 줄의 경계가 끊겨 보이므로, 버튼도 동일한 행 높이를 채운다.
+ */
+.code-form > button {
+    align-self: stretch;
+    justify-self: stretch;
+    min-width: 0;
+    min-height: 36px;
+    margin: 0;
+    border-top: 0;
+    border-right: 0;
+    border-bottom: 0;
+    border-left: 1px solid var(--office-line);
+    border-radius: 0;
+}
+.favorite-card .code-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.code-card .code-form { padding-top: 0; border-top: 1px solid var(--office-line); }
+.code-card > #useYnSelect { width: 100%; }
+#codeVersion, .version-badge { min-height: auto; margin: 0; padding: 5px 8px; border: 0; border-radius: 0; color: #357bd2; background: transparent; font-size: 11px; }
+.admin-subsection { margin-top: 17px; padding-top: 0; border-top: 0; }
+.subsection-title { margin-bottom: 5px; padding: 6px 0; border-bottom: 2px solid #3d7fe0; }
+.subsection-title strong { color: #151b25; font-size: 15px; }
+.subsection-title span { color: #728095; font-size: 11px; }
+.mapping-state { margin: 0 !important; border: 1px solid var(--office-line); border-top: 0; border-radius: 0; background: #fbfcfe; }
+
+.result-card { display: none; }
+.page-footer { display: none; }
+
+@media (max-width: 900px) {
+    .workspace-tabs { padding-left: 0; }
+    .layout { display: block; }
+    .sidebar { position: relative; top: 0; width: 100%; height: auto; max-height: 260px; }
+    .brand { display: none; }
+    main { padding: 14px; }
+    .code-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 600px) {
+    .workspace-tab { min-width: 130px; gap: 11px; font-size: 12px; }
+    .workspace-tab:nth-of-type(n+4) { display: none; }
+    .hero p { display: block; margin: 4px 0 0; }
+    .code-form, .favorite-card .code-form { grid-template-columns: 1fr; }
+    .code-form label { grid-template-columns: 96px minmax(0, 1fr); }
+}
+
+/* 흰색 본문과 남색 업무 쉘을 기준으로 관리자 화면의 배경 체계를 통일한다. */
+:root {
+    --office-navy: #102a46;
+    --office-blue: #274f78;
+    --office-mint: #274f78;
+    --office-line: #cbd6e2;
+    --office-label: #edf2f7;
+    --office-text: #172b43;
+    background: #f3f6fa;
+}
+body { background: #f3f6fa; }
+.topbar, .workspace-tabs { background: #102a46; }
+.workspace-tabs { border-bottom-color: #345574; }
+.tab-menu-toggle { border-right-color: #345574; color: #d8e5f1; }
+.tab-menu-toggle:hover { background: #193b5f; }
+.workspace-tab { border-right-color: #345574; color: #d8e5f1; background: #193b5f; }
+.workspace-tab.is-active { color: #102a46; background: #fff; }
+.workspace-tab.is-active::before { background: #102a46; }
+.sidebar { color: #e8f0f7; background: #102a46; border-right-color: #102a46; }
+.brand { border-bottom-color: #345574; background: #0c2139; }
+.brand-mark { background: #fff; }
+.brand-mark svg { stroke: #102a46; }
+.brand strong { color: #fff; }
+.brand span { color: #b9cadb; }
+#menuTree { background: #102a46; }
+.sidebar li { border-color: #345574; background: #193b5f; }
+.sidebar a, .sidebar li > span { color: #edf4fa; }
+.sidebar ul ul { background: #122f4e; }
+.sidebar ul ul li { border-color: #345574; background: #122f4e; }
+.sidebar ul ul a, .sidebar ul ul li > span { color: #c9d8e6; }
+.sidebar a::before, .sidebar li > span::before { border-left-color: #9eb8d0; }
+.sidebar ul ul a::before { border-color: #9eb8d0; }
+.sidebar a:hover, .sidebar a[aria-current="page"] { color: #102a46; background: #fff; }
+.sidebar a:focus-visible { outline-color: #fff; }
+main { background: #fff; }
+.hero h2, .card h2, .subsection-title strong { color: #102a46; }
+.hero h2::before, .card h2::before { color: #274f78; }
+.card h2, .subsection-title { border-bottom-color: #102a46; }
+.code-form label { color: #274f78; background: #edf2f7; }
+.code-form input[type="checkbox"] { accent-color: #102a46; }
+.actions button, .code-form button, #btnCommonCodeSave { background: #102a46; }
+.actions button:hover:not(:disabled), .code-form button:hover:not(:disabled), #btnCommonCodeSave:hover:not(:disabled) { background: #274f78; }

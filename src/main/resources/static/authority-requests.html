@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>권한 신청 및 심사 | ARISU Works</title>
+    <link rel="icon" href="data:,">
+    <link rel="stylesheet" href="/authority-requests.css">
+    <script src="/authority-requests.js" defer></script>
+</head>
+<body>
+<header><div><small>ARISU WORKS</small><h1>권한 신청 및 심사</h1></div>
+    <nav aria-label="업무 이동"><a href="/portal.html">사용자 홈</a><a id="adminLink" href="/admin/authority" hidden>권한 관리</a><a href="/authority-revocations.html">사용자 일괄 회수</a></nav>
+</header>
+<main>
+    <p id="identity">사용자 정보를 확인하고 있습니다.</p>
+    <p id="feedback" role="status" aria-live="polite"></p>
+    <section aria-labelledby="applyTitle">
+        <h2 id="applyTitle">업무 권한 신청</h2>
+        <p>변경 신청은 승인 시 선택한 시스템의 기존 직접 권한을 회수하고 신청한 권한으로 교체합니다.</p>
+        <form id="requestForm">
+            <div class="form-grid">
+                <label>신청 구분<select id="requestKind" required><option value="GRANT">권한 추가</option><option value="CHANGE">기존 권한 변경</option></select></label>
+                <label>시스템<select id="requestSystem" required></select></label>
+                <label>시작일<input id="validFrom" type="date" required></label>
+                <label>종료일<input id="validTo" type="date" required></label>
+            </div>
+            <fieldset><legend>신청 권한</legend><div id="authorityChoices" class="choices"></div></fieldset>
+            <label>신청 사유<textarea id="requestReason" maxlength="1000" rows="3" required></textarea></label>
+            <button id="submitRequest" type="submit" disabled>신청 제출</button>
+        </form>
+    </section>
+    <section aria-labelledby="historyTitle">
+        <div class="heading"><h2 id="historyTitle">나의 신청 이력</h2><button id="refreshMine" type="button">새로고침</button></div>
+        <div class="table-wrap"><table><thead><tr><th>번호</th><th>시스템 / 구분</th><th>권한 / 기간</th><th>신청 사유</th><th>상태</th><th>처리자 / 처리 사유</th></tr></thead><tbody id="mineRows"></tbody></table></div>
+        <div class="pagination"><button id="minePrev" type="button">이전</button><span id="minePage"></span><button id="mineNext" type="button">다음</button></div>
+    </section>
+    <section id="reviewSection" aria-labelledby="reviewTitle" hidden>
+        <div class="heading"><h2 id="reviewTitle">권한 신청 심사</h2><button id="refreshReview" type="button">새로고침</button></div>
+        <label>처리 상태<select id="reviewStatus"><option value="PENDING">신청 대기</option><option value="APPROVED">승인</option><option value="REJECTED">반려</option><option value="">전체</option></select></label>
+        <div class="table-wrap"><table><thead><tr><th>선택</th><th>신청자 / 조직</th><th>시스템 / 구분</th><th>권한 / 기간</th><th>신청 사유</th><th>상태</th></tr></thead><tbody id="reviewRows"></tbody></table></div>
+        <div class="pagination"><button id="reviewPrev" type="button">이전</button><span id="reviewPage"></span><button id="reviewNext" type="button">다음</button></div>
+        <label>처리 사유 <span>(반려 시 필수)</span><textarea id="reviewReason" maxlength="1000" rows="2"></textarea></label>
+        <div class="actions"><button id="approve" type="button" disabled>선택 신청 승인</button><button id="reject" type="button" class="secondary" disabled>선택 신청 반려</button></div>
+    </section>
+    <section id="classificationSection" aria-labelledby="classificationTitle" hidden>
+        <h2 id="classificationTitle">권한 분류 관리</h2>
+        <p>분류를 저장한 뒤 권한 마스터에서 연결할 수 있습니다. 하위 분류나 권한이 연결된 분류는 삭제할 수 없습니다.</p>
+        <div class="table-wrap"><table><thead><tr><th>분류 ID</th><th>분류명</th><th>상위 분류</th><th>시스템</th><th>상태</th><th>작업</th></tr></thead><tbody id="classificationRows"></tbody></table></div>
+        <form id="classificationForm"><div class="form-grid">
+            <label>분류 ID<input id="classificationId" pattern="[A-Z0-9_]{1,50}" maxlength="50" required></label>
+            <label>분류명<input id="classificationName" maxlength="100" required></label>
+            <label>시스템 ID<input id="classificationSystem" pattern="[A-Z0-9_]{1,50}" value="INFO" required></label>
+            <label>상위 분류<select id="classificationParent"><option value="">최상위</option></select></label>
+            <label class="check"><input id="classificationActive" type="checkbox" checked>사용</label>
+        </div><button id="saveClassification" type="submit" disabled>분류 저장</button></form>
+    </section>
+</main>
+</body>
+</html>

@@ -33,12 +33,21 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @RequestMapping("/api")
+@com.example.permissiondemo.storage.StateBoundary
 public class PermissionApiController {
 
+    /**
+     * 로그인 세션과 권한 이력에서 현재 시점의 업무 권한만 계산한다.
+     * 요청 파라미터로 권한을 받지 않아 클라이언트가 권한 목록을 위조할 여지를 없앤다.
+     */
     private final EffectiveAuthorityService effectiveAuthorityService;
+    /** 메뉴 표시 트리와 실제 메뉴 접근 가능 여부를 같은 정책으로 판단한다. */
     private final MenuAuthorizationService menuAuthorizationService;
+    /** 버튼 노출용 기능 목록과 서버 실행 권한을 일관된 기능 키로 판단한다. */
     private final ProgramAuthorizationService programAuthorizationService;
+    /** 화면 선택값에 사용하는 공통코드의 조회·등록과 계층 검증을 담당한다. */
     private final CommonCodeService commonCodeService;
+    /** 인증 객체에서 사용자명, 조직, IP, traceId를 안전하게 추출하는 요청 단위 컨텍스트다. */
     private final CurrentUserContext userContext;
 
     public PermissionApiController(
@@ -54,7 +63,10 @@ public class PermissionApiController {
         this.userContext = userContext;
     }
 
-    /** 인증 사용자와 현재 조직, 계산된 유효 업무 권한을 반환한다. */
+    /**
+     * 인증 사용자와 현재 조직, 계산된 유효 업무 권한을 반환한다.
+     * 프런트엔드는 이 목록을 참고해 화면을 구성할 수 있지만, 실행 권한은 각 API의 서버 측 검사를 통과해야 한다.
+     */
     @GetMapping("/me")
     public ApiResponse<CurrentUserView> currentUser() {
         CurrentUserContext.CurrentUser current = userContext.require();
@@ -66,13 +78,19 @@ public class PermissionApiController {
                 current.username(), current.organizationId(), authorityIds));
     }
 
-    /** 공용 메뉴와 현재 유효 권한 메뉴를 합친 화면용 계층 트리를 반환한다. */
+    /**
+     * 공용 메뉴와 현재 유효 권한 메뉴를 합친 화면용 계층 트리를 반환한다.
+     * 하위 메뉴가 허용된 경우 탐색을 위한 상위 컨테이너는 포함될 수 있으나, 그것만으로 상위 메뉴 실행이 허용되지는 않는다.
+     */
     @GetMapping("/menus")
     public ApiResponse<List<MenuAuthorizationService.MenuNode>> menus(Authentication authentication) {
         return ApiResponse.ok(menuAuthorizationService.findAuthorizedMenuTree(authentication));
     }
 
-    /** 특정 메뉴·프로그램 문맥에서 화면에 활성화할 수 있는 기능 목록을 반환한다. */
+    /**
+     * 특정 메뉴·프로그램 문맥에서 화면에 활성화할 수 있는 기능 목록을 반환한다.
+     * componentId는 HTML 버튼 등 UI 요소와 매핑하기 위한 식별자이며, 권한 판단 자체는 menu/program/action 세 키로 한다.
+     */
     @GetMapping("/menus/{menuId}/programs/{programId}/actions")
     public ApiResponse<List<ProgramAuthorizationService.ActionPermission>> programActions(
             Authentication authentication,
@@ -82,7 +100,10 @@ public class PermissionApiController {
                 programAuthorizationService.findAllowedActions(authentication, menuId, programId));
     }
 
-    /** 현재 날짜에 신규 입력 선택지로 사용할 수 있는 활성 공통코드를 반환한다. */
+    /**
+     * 현재 날짜에 신규 입력 선택지로 사용할 수 있는 활성 공통코드를 반환한다.
+     * 비활성 코드와 유효 기간이 끝난 코드는 과거 데이터 표시에는 남을 수 있어도 새 입력값으로는 반환하지 않는다.
+     */
     @GetMapping("/common-codes/{groupCode}")
     public ApiResponse<List<CommonCodeService.CommonCodeItem>> commonCodes(
             @PathVariable String groupCode) {
@@ -110,7 +131,10 @@ public class PermissionApiController {
                 request.validTo()));
     }
 
-    /** 현재 세션에 연결된 CSRF 헤더명, 폼 파라미터명과 토큰을 반환한다. */
+    /**
+     * 현재 세션에 연결된 CSRF 헤더명, 폼 파라미터명과 토큰을 반환한다.
+     * JavaScript는 반환된 headerName을 사용해 POST·PUT·DELETE 요청에 token을 넣어야 세션 기반 위조 요청 방어를 통과한다.
+     */
     @GetMapping("/csrf")
     public ApiResponse<CsrfView> csrf(@RequestAttribute("_csrf") CsrfToken csrfToken) {
         return ApiResponse.ok(new CsrfView(

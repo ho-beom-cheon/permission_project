@@ -5,12 +5,24 @@ let authorityAdmin = null;
 let menuAdmin = null;
 let programAdmin = null;
 let commonCodeItems = [];
+const openedWorkspacePages = new Map();
+const workspacePageUrls = Object.freeze({
+    '#home': '/admin/home',
+    '#content': '/admin/content',
+    '#authority-master': '/admin/authority-master',
+    '#authority': '/admin/authority',
+    '#menu': '/admin/menu',
+    '#program': '/admin/program',
+    '#common-code': '/admin/common-code'
+});
+const workspaceStateKey = 'permission-demo.opened-workspace-pages';
 
 /**
  * DOM 구성이 끝나면 모든 버튼과 선택 이벤트를 먼저 연결한 뒤 화면 공통 데이터를 조회한다.
  * 초기화 중 발생한 인증·인가·검증 오류도 하단 응답 콘솔에 동일한 형식으로 표시한다.
  */
 document.addEventListener('DOMContentLoaded', () => {
+    configureWorkspacePages();
     bindEvents();
     initialize().catch(showError);
 });
@@ -56,6 +68,7 @@ async function refreshContext() {
 
 /** 정적인 화면 요소에 API 조회, 저장, 선택 연동과 해시 메뉴 탐색 동작을 연결한다. */
 function bindEvents() {
+    bindTableRowSelection();
     bindApiButton('btnContentRead', '/api/content/preview', 'GET');
     bindApiButton('btnContentSave', '/api/content/save', 'POST');
     bindApiButton('btnContentPublish', '/api/content/publish', 'POST');
@@ -91,7 +104,24 @@ function bindEvents() {
     document.getElementById('btnPortalHome').addEventListener('click', () => {
         window.location.assign('/portal.html');
     });
+    document.querySelector('.tab-menu-toggle').addEventListener('click', () => {
+        document.querySelector('.sidebar').scrollIntoView({behavior: 'smooth', block: 'start'});
+    });
     window.addEventListener('hashchange', routeToHash);
+}
+
+/** 표 행을 클릭하면 같은 표 안의 이전 선택을 해제하고 현재 선택 행을 눈에 띄게 표시한다. */
+function bindTableRowSelection() {
+    document.addEventListener('click', event => {
+        const row = event.target.closest('tbody tr');
+        if (!row) {
+            return;
+        }
+        row.parentElement.querySelectorAll('tr.is-selected').forEach(item => {
+            item.classList.remove('is-selected');
+        });
+        row.classList.add('is-selected');
+    });
 }
 
 /** 권한 마스터와 사용자별 유효 권한·이력을 조회해 표와 입력 선택지를 갱신한다. */
@@ -204,6 +234,9 @@ function renderAuthMaster(view) {
 function selectAuthMaster(authority) {
     document.getElementById('authMasterId').value = authority.id;
     document.getElementById('authMasterName').value = authority.name;
+    document.getElementById('authMasterSystem').value = authority.systemId || 'INFO';
+    document.getElementById('authMasterClassification').value = authority.classificationId || '';
+    document.getElementById('authMasterDescription').value = authority.description || '';
     document.getElementById('authMasterActive').checked = authority.active;
 }
 
@@ -220,7 +253,10 @@ async function saveAuthMaster() {
                 method: 'POST',
                 body: {
                     name: document.getElementById('authMasterName').value,
-                    active: document.getElementById('authMasterActive').checked
+                    active: document.getElementById('authMasterActive').checked,
+                    systemId: document.getElementById('authMasterSystem').value,
+                    classificationId: nullableValue('authMasterClassification'),
+                    description: document.getElementById('authMasterDescription').value
                 }
             });
         await Promise.all([
@@ -691,7 +727,7 @@ function selectCode(item) {
 /** 현재 편집 코드 외의 같은 그룹 항목을 상위 코드 후보로 구성한다. */
 function renderCodeParents(items, currentCode) {
     const options = [{value: '', text: '상위 코드 없음'}];
-    items.filter(item => item.code !== currentCode).forEach(item => options.push({
+    items.filter(item => !item.parentCode && item.code !== currentCode).forEach(item => options.push({
         value: item.code,
         text: `${item.code} - ${item.name}`
     }));
@@ -828,6 +864,7 @@ function buildMenuList(nodes) {
             link.href = node.path;
             link.textContent = node.name;
             link.dataset.menuId = node.id;
+            link.dataset.menuName = node.name;
             link.addEventListener('click', event => {
                 if (!document.querySelector(node.path)) {
                     event.preventDefault();
@@ -836,7 +873,10 @@ function buildMenuList(nodes) {
                         path: node.path,
                         message: '연결된 화면 영역이 없습니다. 메뉴 경로를 확인해 주세요.'
                     });
+                    return;
                 }
+                event.preventDefault();
+                selectWorkspacePage(node.path);
             });
             item.appendChild(link);
         } else {
@@ -852,16 +892,137 @@ function buildMenuList(nodes) {
     return list;
 }
 
-/** 현재 URL 해시에 해당하는 화면으로 이동하고 일치하는 메뉴 링크를 접근성 속성으로 표시한다. */
-function routeToHash() {
-    const hash = window.location.hash || '#home';
-    document.querySelectorAll('#menuTree a').forEach(link => {
-        if (link.getAttribute('href') === hash) {
-            link.setAttribute('aria-current', 'page');
-        } else {
-            link.removeAttribute('aria-current');
-        }
+/** 업무 메뉴마다 독립 화면처럼 표시할 수 있도록 카드 영역에 페이지 식별자를 준비한다. */
+function configureWorkspacePages() {
+    document.querySelectorAll('main > section[id]').forEach(section => {
+        section.dataset.workspacePage = `#${section.id}`;
+        section.classList.add('workspace-page');
     });
+    // 메뉴가 없는 보조 정보는 별도 탭을 만들지 않고 홈 화면의 구성 요소로 둔다.
+    document.querySelectorAll('main > section.favorite-card, main > section.accounts-card:not([id])')
+        .forEach(section => {
+            section.dataset.workspacePage = '#home';
+            section.classList.add('workspace-page');
+        });
+    restoreWorkspaceTabs();
+}
+
+/** 현재 URL 해시에 해당하는 한 화면만 표시하고, 메뉴와 상단 업무 탭의 활성 상태를 함께 갱신한다. */
+function routeToHash() {
+    const requestedPath = workspacePagePath();
+    const target = document.querySelector(requestedPath);
+    const path = target?.matches('section[data-workspace-page]') ? requestedPath : '#home';
+    const selectedMenu = document.querySelector(`#menuTree a[href="${CSS.escape(path)}"]`);
+    const pageName = selectedMenu?.dataset.menuName || pageTitle(path);
+
+    openWorkspacePage(path, pageName);
+    document.querySelectorAll('#menuTree a').forEach(link => {
+        link.toggleAttribute('aria-current', link.getAttribute('href') === path);
+    });
+}
+
+/** 메뉴에서 연 화면을 중복 없이 탭 목록에 보관한다. */
+function openWorkspacePage(path, name) {
+    if (!openedWorkspacePages.has(path)) {
+        openedWorkspacePages.set(path, {name, pinned: path === '#home'});
+    }
+    document.querySelectorAll('main > section[data-workspace-page]').forEach(section => {
+        const active = section.dataset.workspacePage === path;
+        section.hidden = !active;
+        section.classList.toggle('is-page-active', active);
+    });
+    document.querySelector('.hero').hidden = path !== '#home';
+    saveWorkspaceTabs();
+    renderWorkspaceTabs(path);
+}
+
+/** 열려 있는 업무 화면을 상단 탭으로 다시 그린다. */
+function renderWorkspaceTabs(activePath) {
+    const container = document.getElementById('workspaceTabs');
+    container.replaceChildren();
+    openedWorkspacePages.forEach((page, path) => {
+        const tab = document.createElement('div');
+        tab.className = `workspace-tab${path === activePath ? ' is-active' : ''}`;
+        tab.setAttribute('role', 'tab');
+        tab.setAttribute('aria-selected', String(path === activePath));
+        const activate = document.createElement('button');
+        activate.type = 'button';
+        activate.className = 'workspace-tab-label';
+        activate.textContent = page.name;
+        activate.addEventListener('click', () => selectWorkspacePage(path));
+        tab.appendChild(activate);
+        if (!page.pinned) {
+            const close = document.createElement('button');
+            close.type = 'button';
+            close.className = 'workspace-tab-close';
+            close.textContent = '×';
+            close.setAttribute('aria-label', `${page.name} 탭 닫기`);
+            close.addEventListener('click', () => closeWorkspacePage(path));
+            tab.appendChild(close);
+        }
+        container.appendChild(tab);
+    });
+}
+
+/** 상단 탭 선택을 URL 해시에도 반영해 새로고침과 뒤로 가기 동작을 보존한다. */
+function selectWorkspacePage(path) {
+    if (workspacePagePath() === path) {
+        routeToHash();
+        return;
+    }
+    window.location.assign(workspacePageUrls[path] || `/${path}`);
+}
+
+/** 선택 탭을 닫으면 가장 최근에 남은 업무 화면을 활성화한다. */
+function closeWorkspacePage(path) {
+    if (!openedWorkspacePages.has(path) || openedWorkspacePages.get(path).pinned) {
+        return;
+    }
+    const wasActive = workspacePagePath() === path;
+    openedWorkspacePages.delete(path);
+    saveWorkspaceTabs();
+    if (wasActive) {
+        const remainingPaths = [...openedWorkspacePages.keys()];
+        selectWorkspacePage(remainingPaths.at(-1) || '#home');
+    } else {
+        renderWorkspaceTabs(workspacePagePath());
+    }
+}
+
+/** 현재 독립 관리자 URL을 기존 화면 식별자와 연결한다. */
+function workspacePagePath() {
+    const matched = Object.entries(workspacePageUrls)
+        .find(([, url]) => window.location.pathname === url);
+    return matched?.[0] || window.location.hash || '#home';
+}
+
+/** 새 페이지로 이동해도 열린 탭 목록을 세션 범위에서 보존한다. */
+function saveWorkspaceTabs() {
+    const pages = [...openedWorkspacePages.entries()]
+        .map(([path, page]) => ({path, name: page.name, pinned: page.pinned}));
+    sessionStorage.setItem(workspaceStateKey, JSON.stringify(pages));
+}
+
+/** 저장된 탭 중 현재 화면으로 실제 열 수 있는 항목만 복원한다. */
+function restoreWorkspaceTabs() {
+    try {
+        const pages = JSON.parse(sessionStorage.getItem(workspaceStateKey) || '[]');
+        pages.forEach(page => {
+            if (workspacePageUrls[page.path] && typeof page.name === 'string') {
+                openedWorkspacePages.set(page.path, {
+                    name: page.name,
+                    pinned: page.path === '#home'
+                });
+            }
+        });
+    } catch {
+        sessionStorage.removeItem(workspaceStateKey);
+    }
+}
+
+/** 메뉴 트리가 아직 로드되지 않은 초기 단계에도 화면 이름을 안정적으로 표시한다. */
+function pageTitle(path) {
+    return document.querySelector(`${path} h2`)?.textContent?.trim() || '홈';
 }
 
 /** 모든 보호 버튼을 기본 거부한 뒤 서버가 허용한 프로그램 기능만 활성화한다. */

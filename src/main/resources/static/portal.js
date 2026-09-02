@@ -22,20 +22,35 @@ document.addEventListener('DOMContentLoaded', () => {
 
 /** 메뉴, 업무 버튼, 검색, 모바일 탐색과 로그아웃에 필요한 정적 이벤트를 연결한다. */
 function bindPortalEvents() {
+    bindTableRowSelection();
     document.getElementById('btnSync').addEventListener('click', () => loadPortal(true));
     document.getElementById('btnLogout').addEventListener('click', logout);
     document.getElementById('btnMenuToggle').addEventListener('click', toggleSidebar);
     document.getElementById('sidebarBackdrop').addEventListener('click', closeSidebar);
     document.getElementById('serviceSearch').addEventListener('input', filterServices);
     document.getElementById('btnShowAll').addEventListener('click', showAllServices);
-    document.getElementById('btnContentRead').addEventListener('click', () => callContent('/api/content/preview', 'GET'));
-    document.getElementById('btnContentSave').addEventListener('click', () => callContent('/api/content/save', 'POST'));
-    document.getElementById('btnContentPublish').addEventListener('click', () => callContent('/api/content/publish', 'POST'));
+    document.getElementById('btnContentRead').addEventListener('click', () => loadPortalWork().catch(showPortalError));
+    document.getElementById('btnContentSave').addEventListener('click', () => location.assign('/community.html'));
+    document.getElementById('btnContentPublish').addEventListener('click', () => location.assign('/community.html'));
     document.querySelectorAll('[data-go-home]').forEach(button => {
         button.addEventListener('click', () => navigateTo('#home'));
     });
     window.addEventListener('hashchange', showCurrentPage);
     window.addEventListener('keydown', focusSearch);
+}
+
+/** 표 행을 클릭하면 같은 표 안의 이전 선택을 해제하고 현재 선택 행을 눈에 띄게 표시한다. */
+function bindTableRowSelection() {
+    document.addEventListener('click', event => {
+        const row = event.target.closest('tbody tr');
+        if (!row) {
+            return;
+        }
+        row.parentElement.querySelectorAll('tr.is-selected').forEach(item => {
+            item.classList.remove('is-selected');
+        });
+        row.classList.add('is-selected');
+    });
 }
 
 /**
@@ -64,7 +79,7 @@ async function loadPortal(notify) {
         renderDynamicPages(context.menus);
         enableActions(context.programActions);
         renderStatuses(statuses);
-        renderContentRows(statuses.items);
+        await loadPortalWork();
         renderSummary(context, statuses.items);
         showCurrentPage();
         setSyncState('권한과 메뉴 최신 상태', true);
@@ -325,41 +340,41 @@ function renderStatuses(groupView) {
     document.getElementById('codeVersion').textContent = `ARTICLE_STATUS v${groupView.version}`;
 }
 
-/** 사용자 콘텐츠 목록의 상태명을 서버 공통코드와 연결해 관리 변경 결과를 목록에도 반영한다. */
-function renderContentRows(statuses) {
-    const items = [
-        {no: 104, type: '공지', title: '통합 업무포털 이용 안내', status: 1, author: '운영관리자', date: '2026.09.01'},
-        {no: 103, type: '업무', title: '주간 서비스 운영 현황', status: 0, author: 'manager', date: '2026.08.31'},
-        {no: 102, type: '자료', title: '정보보안 준수사항 안내', status: 1, author: '보안담당자', date: '2026.08.28'},
-        {no: 101, type: '소식', title: '시스템 기능 개선 결과', status: 0, author: 'admin', date: '2026.08.25'}
-    ];
-    const fallback = [{code: 'DRAFT', name: '작성 중'}, {code: 'PUBLISHED', name: '게시'}];
-    const available = statuses.length ? statuses : fallback;
-    const body = document.getElementById('contentRows');
-    body.replaceChildren();
-    items.forEach(item => {
-        const status = available[item.status % available.length];
-        const row = document.createElement('tr');
-        const checkCell = document.createElement('td');
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.setAttribute('aria-label', `${item.no}번 콘텐츠 선택`);
-        checkCell.appendChild(checkbox);
-        appendCell(row, String(item.no));
-        appendCell(row, item.type);
-        appendCell(row, item.title);
-        const statusCell = document.createElement('td');
-        const badge = document.createElement('span');
-        badge.className = `state-badge ${status.code.toLowerCase()}`;
-        badge.textContent = status.name;
-        statusCell.appendChild(badge);
-        // 관리 화면에서 정한 ARTICLE_STATUS 이름을 제목 다음 상태 열에 실제로 삽입한다.
-        row.appendChild(statusCell);
-        appendCell(row, item.author);
-        appendCell(row, item.date);
-        row.prepend(checkCell);
-        body.appendChild(row);
-    });
+/** 저장된 공지·개인 일정을 읽어 포털 요약과 업무 목록에 반영한다. */
+async function loadPortalWork() {
+    const today = new Date().toLocaleDateString('sv-SE', {timeZone: 'Asia/Seoul'});
+    const query = document.getElementById('contentSearch').value;
+    const [noticeResult, scheduleResult, unreadResult] = await Promise.all([
+        requestJson('/api/notice-feed?size=20&query=' + encodeURIComponent(query)),
+        requestJson('/api/me/schedules?from=' + today + '&to=' + today),
+        requestJson('/api/me/notices/unread-count')
+    ]);
+    const posts = noticeResult.data.content, schedules = scheduleResult.data.filter(item => item.status === 'OPEN');
+    const noticeList = document.getElementById('noticeList'), body = document.getElementById('contentRows');
+    noticeList.replaceChildren(); body.replaceChildren();
+    for (const post of posts) {
+        const row = document.createElement('tr'), link = document.createElement('a');
+        link.href = '/community.html?board=' + encodeURIComponent(post.boardId) + '&post=' + post.id; link.textContent = '열기';
+        const action = document.createElement('td'); action.append(link); row.append(action);
+        for (const value of [post.id, '공지', post.title, post.published ? '게시' : '임시 저장', post.author, post.createdAt.slice(0,10)]) appendCell(row, String(value));
+        body.append(row);
+    }
+    for (const post of posts.slice(0,4)) {
+        const link = document.createElement('a'), title = document.createElement('span'), date = document.createElement('time');
+        link.href = '/community.html?board=' + encodeURIComponent(post.boardId) + '&post=' + post.id; title.textContent = post.title; date.textContent = post.createdAt.slice(0,10);
+        link.append(title,date); noticeList.append(link);
+    }
+    if (!posts.length) {
+        noticeList.textContent = '등록된 공지사항이 없습니다.';
+        const row=document.createElement('tr'), empty=document.createElement('td'); empty.colSpan=7; empty.textContent='등록된 공지사항이 없습니다.'; row.append(empty);body.append(row);
+    }
+    const scheduleList=document.getElementById('todaySchedules');scheduleList.replaceChildren();
+    for (const schedule of schedules) {
+        const item=document.createElement('li'), time=document.createElement('time'), link=document.createElement('a');
+        time.textContent=schedule.start.slice(11,16);link.href='/my-page.html';link.textContent=schedule.name;item.append(time,link);scheduleList.append(item);
+    }
+    if(!schedules.length){const empty=document.createElement('li');empty.textContent='오늘 예정된 일정이 없습니다.';scheduleList.append(empty);}
+    document.getElementById('noticeCount').textContent=String(unreadResult.data.count);
 }
 
 /** 현재 메뉴·권한·상태 코드 수와 마지막 동기화 시각을 홈 요약 카드에 표시한다. */

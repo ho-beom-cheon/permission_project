@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>공통 업무 관리 | ARISU Works</title><link rel="icon" href="data:,"><link rel="stylesheet" href="/authority-requests.css">
+<script src="/management.js" defer></script></head>
+<body><header><div><small>ARISU WORKS</small><h1>공통 업무 관리</h1></div>
+<nav><a href="/portal.html">사용자 홈</a><a href="/admin/authority">권한 관리</a><a href="/codes.html">공통코드</a><a href="/print-texts.html">출력문구</a><a href="/operations.html">과업·이슈</a><a href="/authority-requests.html">권한 신청·심사</a></nav></header>
+<main><p id="feedback" role="status" aria-live="polite">관리 정보를 확인하고 있습니다.</p>
+<section><div class="form-grid"><label>관리 업무<select id="module"></select></label>
+<label>검색어<input id="search" type="search" placeholder="코드 또는 이름 검색"></label></div>
+<div class="actions"><button id="searchButton" type="button">조회</button><button id="newButton" type="button">새로 입력</button>
+<a id="exportLink" hidden>CSV 내려받기</a></div>
+<div class="table-wrap"><table><thead id="tableHead"></thead><tbody id="tableRows"></tbody></table></div>
+<div class="pagination"><button id="previous" type="button">이전</button><span id="pageInfo"></span><button id="next" type="button">다음</button></div></section>
+<section><h2 id="editorTitle">정보 입력</h2><form id="editor"><div id="fields" class="form-grid"></div>
+<div class="actions"><button id="save" type="submit" disabled>저장</button><button id="remove" class="secondary" type="button" hidden>삭제</button></div></form></section>
+</main></body></html>

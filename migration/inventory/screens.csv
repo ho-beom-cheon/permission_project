@@ -1,0 +1,148 @@
+﻿source,title,route_references,status
+src/main/nexacro/form/cm/bbs/cmBbsDocDetailP.xfdl,자료 게시판_자료 상세,svc::/cm/bbs/modifyBbsSearchCnt.do | svc::/cm/bbs/searchBbsDocMngDetail.do,NOT_VERIFIED
+src/main/nexacro/form/cm/bbs/cmBbsDocF.xfdl,자료 게시판,svc::/cm/bbs/searchBbsDoc.do | svc::/cm/bbs/searchBbsDocMng.do,NOT_VERIFIED
+src/main/nexacro/form/cm/bbs/cmBbsDocMngDetailP.xfdl,자료 게시판 관리 상세,svc::/cm/bbs/modifyBbsDocMng.do | svc::/cm/bbs/registBbsDocMng.do | svc::/cm/bbs/removeBbs.do | svc::/cm/bbs/searchBbsDocMngDetail.do | svc::/cm/bbs/selectBbsMngInfo.do,NOT_VERIFIED
+src/main/nexacro/form/cm/bbs/cmBbsFaqDetailP.xfdl,자주 묻는 질문 상세,svc::/cm/bbs/modifyBbsSearchCnt.do | svc::/cm/bbs/searchBbsFaqDetail.do,NOT_VERIFIED
+src/main/nexacro/form/cm/bbs/cmBbsFaqF.xfdl,자주 묻는 질문,svc::/cm/bbs/searchBbsFaq.do,NOT_VERIFIED
+src/main/nexacro/form/cm/bbs/cmBbsFaqMngDetailP.xfdl,자주 묻는 질문 관리 상세,svc::/cm/bbs/modifyBbsFaqMng.do | svc::/cm/bbs/registBbsFaqMng.do | svc::/cm/bbs/removeBbs.do | svc::/cm/bbs/searchBbsFaqDetail.do | svc::/cm/bbs/selectBbsMngInfo.do,NOT_VERIFIED
+src/main/nexacro/form/cm/bbs/cmBbsMngF.xfdl,게시판 구분 관리,svc::/cm/bbs/modifyBbsMng.do | svc::/cm/bbs/registBbsMng.do | svc::/cm/bbs/removeBbsMng.do | svc::/cm/bbs/searchBbsMng.do,NOT_VERIFIED
+src/main/nexacro/form/cm/bbs/cmBbsNtcDetailP.xfdl,공지사항 상세,svc::/cm/bbs/modifyBbsSearchCnt.do | svc::/cm/bbs/searchBbsNtcDetail.do,NOT_VERIFIED
+src/main/nexacro/form/cm/bbs/cmBbsNtcF.xfdl,공지사항,svc::/cm/bbs/searchBbsNtc.do | svc::/cm/bbs/searchBbsNtcMng.do,NOT_VERIFIED
+src/main/nexacro/form/cm/bbs/cmBbsNtcMngDetailP.xfdl,공지사항 관리 상세,svc::/cm/bbs/modifyBbsNtcMng.do | svc::/cm/bbs/registBbsNtcMng.do | svc::/cm/bbs/removeBbs.do | svc::/cm/bbs/searchBbsNtcDetail.do | svc::/cm/bbs/selectBbsMngInfo.do,NOT_VERIFIED
+src/main/nexacro/form/cm/bbs/cmBbsQnaDetailP.xfdl,문의하기_문의 결과 확인,svc::/cm/bbs/modifyBbsSearchCnt.do | svc::/cm/bbs/removeBbs.do | svc::/cm/bbs/searchBbsQnaAnsFile.do | svc::/cm/bbs/searchBbsQnaDetail.do,NOT_VERIFIED
+src/main/nexacro/form/cm/bbs/cmBbsQnaF.xfdl,문의하기,svc::/cm/bbs/searchBbsQnaList.do | svc::/cm/bbs/searchBbsQnaMng.do,NOT_VERIFIED
+src/main/nexacro/form/cm/bbs/cmBbsQnaMngDetailP.xfdl,문의하기_문의 결과 처리,svc::/cm/bbs/modifyBbsQnaAns.do | svc::/cm/bbs/registBbsQnaAnsMng.do | svc::/cm/bbs/removeBbsQnaAns.do | svc::/cm/bbs/searchBbsQnaAnsFile.do | svc::/cm/bbs/searchBbsQnaDetail.do | svc::/cm/bbs/selectBbsMngInfo.do,NOT_VERIFIED
+src/main/nexacro/form/cm/bbs/cmBbsQnaModifyP.xfdl,문의하기_수정,svc::/cm/bbs/modifyBbsQnaMng.do | svc::/cm/bbs/searchBbsQnaDetail.do | svc::/cm/bbs/selectBbsMngInfo.do,NOT_VERIFIED
+src/main/nexacro/form/cm/bbs/cmBbsQnaRegP.xfdl,문의하기_등록,svc::/cm/bbs/registBbsQnaMng.do | svc::/cm/bbs/selectBbsMngInfo.do,NOT_VERIFIED
+src/main/nexacro/form/cm/bbs/cmBbsRateTblF.xfdl,요금요율표,,NOT_VERIFIED
+src/main/nexacro/form/cm/bbs/cmUtztnTrmsMngF.xfdl,정책 관리,svc::/cm/bbs/selectUtztnTrmsList.do,NOT_VERIFIED
+src/main/nexacro/form/cm/bbs/cmUtztnTrmsMngP.xfdl,정책 상세,svc::/cm/bbs/saveUtztnTrms.do,NOT_VERIFIED
+src/main/nexacro/form/cm/bsis/cmBankCdMngF.xfdl,은행 및 지점 관리,svc::/cm/bsis/modifyBankCdMng.do | svc::/cm/bsis/modifyBrCdMng.do | svc::/cm/bsis/registBankCdMng.do | svc::/cm/bsis/registBrCdMng.do | svc::/cm/bsis/removeBankCdMng.do | svc::/cm/bsis/removeBrCdMng.do | svc::/cm/bsis/searchBankCdMng.do | svc::/cm/bsis/searchBrCdMng.do,NOT_VERIFIED
+src/main/nexacro/form/cm/bsis/cmBasicChrMsgMngF.xfdl,문자 메시지 관리,svc::/cm/bsis/saveBassChrMsgMng.do | svc::/cm/bsis/searchBassChrMsgMng.do,NOT_VERIFIED
+src/main/nexacro/form/cm/bsis/cmCdValMngF.xfdl,인정 징수결정 코드 관리,svc::/cm/bsis/modifyCdValMng.do | svc::/cm/bsis/registCdValMng.do | svc::/cm/bsis/removeCdValMng.do | svc::/cm/bsis/searchCdValMng.do,NOT_VERIFIED
+src/main/nexacro/form/cm/bsis/cmCgStdInfoSmiMngF.xfdl,요금 시뮬레이션,svc::/cm/bsis/saveCgStdInfoMngSmi.do | svc::/cm/bsis/searchCgStdInfoMngSmi.do,NOT_VERIFIED
+src/main/nexacro/form/cm/bsis/cmCgStdrInfoMngF.xfdl,요금기준정보관리,svc::/cm/bsis/saveCgRdMng.do | svc::/cm/bsis/saveCgStdInfoMng.do | svc::/cm/bsis/searchCgRdMng.do | svc::/cm/bsis/searchCgStdInfoMng.do,NOT_VERIFIED
+src/main/nexacro/form/cm/bsis/cmCmCdMngF.xfdl,공통코드관리,svc::/cm/bsis/modifyCmCd.do | svc::/cm/bsis/modifyCmCdDtal.do | svc::/cm/bsis/modifyCmCdDtalLwr.do | svc::/cm/bsis/registCmCd.do | svc::/cm/bsis/registCmCdDtal.do | svc::/cm/bsis/registCmCdDtalLwr.do | svc::/cm/bsis/removeCmCd.do | svc::/cm/bsis/removeCmCdDtal.do | svc::/cm/bsis/searchCmCd.do | svc::/cm/bsis/searchCmCdDtal.do | svc::/cm/bsis/searchCmCdDtalLwr.do | svc::/cm/bsis/searchCmCdExcel.do,NOT_VERIFIED
+src/main/nexacro/form/cm/bsis/cmCsCdMngF.xfdl,업태/수계정보 코드 관리,svc::/cm/bsis/modifyCsCdMng.do | svc::/cm/bsis/registCsCdMng.do | svc::/cm/bsis/removeCsCdMng.do | svc::/cm/bsis/searchCsCdMng.do,NOT_VERIFIED
+src/main/nexacro/form/cm/bsis/cmExpansGuidP.xfdl,확대보기안내,,NOT_VERIFIED
+src/main/nexacro/form/cm/bsis/cmHelpMngDetailP.xfdl,도움말 관리_상세,svc::/cm/hp/insertHpGuide.do | svc::/cm/hp/selectHpGuideDetail.do | svc::/cm/hp/updateHpGuide.do,NOT_VERIFIED
+src/main/nexacro/form/cm/bsis/cmHelpMngF.xfdl,도움말 관리,svc::/cm/hp/selectHpGuideList.do | svc::/cm/menu/selectMenuTreeList.do,NOT_VERIFIED
+src/main/nexacro/form/cm/bsis/cmHgyeSmokArvMngF.xfdl,세목/세입 코드 관리,svc::/cm/bsis/modifyHgyeArvMng.do | svc::/cm/bsis/modifyHgyeSmokMng.do | svc::/cm/bsis/registAllHgyeArvMng.do | svc::/cm/bsis/registAllHgyeSmokMng.do | svc::/cm/bsis/registHgyeArvMng.do | svc::/cm/bsis/registHgyeSmokMng.do | svc::/cm/bsis/removeHgyeArvMng.do | svc::/cm/bsis/removeHgyeSmokMng.do | svc::/cm/bsis/searchHgyeArvMng.do | svc::/cm/bsis/searchHgyeSmokArvYear.do | svc::/cm/bsis/searchHgyeSmokMng.do,NOT_VERIFIED
+src/main/nexacro/form/cm/bsis/cmHolidayMngF.xfdl,공휴일관리,svc::/cm/bsis/modifyHldyMng.do | svc::/cm/bsis/registHldyMng.do | svc::/cm/bsis/registYearHldyMng.do | svc::/cm/bsis/removeHldyMng.do | svc::/cm/bsis/searchHldyMng.do | svc::/cm/bsis/searchYearMng.do,NOT_VERIFIED
+src/main/nexacro/form/cm/bsis/cmInsttCdMngF.xfdl,연계 기관 관리,svc::/cm/bsis/modifyInsttCdMng.do | svc::/cm/bsis/registInsttCdMng.do | svc::/cm/bsis/removeInsttCdMng.do | svc::/cm/bsis/searchInsttCdMng.do,NOT_VERIFIED
+src/main/nexacro/form/cm/bsis/cmInsttP.xfdl,연계기관조회팝업,svc::/cm/bsis/searchInsttCdMng.do,NOT_VERIFIED
+src/main/nexacro/form/cm/bsis/cmOfficeMngF.xfdl,사업소지역관리,svc::/cm/bsis/modifyDeptCd.do | svc::/cm/bsis/modifyDongCd.do | svc::/cm/bsis/modifyGuCd.do | svc::/cm/bsis/modifyOffMng.do | svc::/cm/bsis/modifyTel.do | svc::/cm/bsis/registDeptCd.do | svc::/cm/bsis/registDongCd.do | svc::/cm/bsis/registGuCd.do | svc::/cm/bsis/registOffMng.do | svc::/cm/bsis/registTel.do | svc::/cm/bsis/removeDeptCd.do | svc::/cm/bsis/removeOffMng.do | svc::/cm/bsis/removeTel.do | svc::/cm/bsis/searchCityCd.do | svc::/cm/bsis/searchDeptCd.do | svc::/cm/bsis/searchDongCd.do | svc::/cm/bsis/searchGuCd.do | svc::/cm/bsis/searchGuDongCdExcel.do | svc::/cm/bsis/searchOffMng.do | svc::/cm/bsis/searchTel.do,NOT_VERIFIED
+src/main/nexacro/form/cm/bsis/cmPrintCnMngF.xfdl,보고서 출력 내용 관리,svc::/cm/bsis/registPrintCnMng.do | svc::/cm/bsis/removePrintCnMng.do | svc::/cm/bsis/searchPrintCnDeatilMng.do | svc::/cm/bsis/searchPrintCnListMng.do,NOT_VERIFIED
+src/main/nexacro/form/cm/bsis/cmPrmtMngF.xfdl,파라미터관리,svc::/cm/bsis/modifyPrmtMng.do | svc::/cm/bsis/registPrmtMng.do | svc::/cm/bsis/removePrmtMng.do | svc::/cm/bsis/searchPrmtMng.do,NOT_VERIFIED
+src/main/nexacro/form/cm/bsis/cmWorkDayDetailP.xfdl,정기 작업 일정 상세,svc::/cm/bsis/searchWorkDetailInfo.do,NOT_VERIFIED
+src/main/nexacro/form/cm/bsis/cmWorkDayMngF.xfdl,정기 작업 일정 관리,svc::/cm/bsis/modifyWorkDayMng.do | svc::/cm/bsis/registWorkDayMng.do | svc::/cm/bsis/removeWorkDayMng.do | svc::/cm/bsis/searchDefaultDate.do | svc::/cm/bsis/searchWorkDayMng.do | svc::/cm/bsis/searchYearList.do,NOT_VERIFIED
+src/main/nexacro/form/cm/bsis/cmWorkDayResveP.xfdl,작업일 예약 등록,svc::/cm/bsis/modifyWorkDayResvInfo.do | svc::/cm/bsis/registWorkDayResvInfo.do | svc::/cm/bsis/removeWorkDayResvInfo.do | svc::/cm/bsis/searchDefaultDate.do | svc::/cm/bsis/searchWorkDayResvInfo.do | svc::/cm/bsis/searchYearList.do,NOT_VERIFIED
+src/main/nexacro/form/cm/bsis/cmZipAddrMngF.xfdl,우편번호관리,svc::/cm/bsis/modifyRnMng.do | svc::/cm/bsis/modifyZipAddrMng.do | svc::/cm/bsis/modifyZipRnMapng.do | svc::/cm/bsis/registRnMng.do | svc::/cm/bsis/registZipAddrMng.do | svc::/cm/bsis/registZipRnMapng.do | svc::/cm/bsis/removeRnMng.do | svc::/cm/bsis/removeZipAddrMng.do | svc::/cm/bsis/removeZipRnMapng.do | svc::/cm/bsis/searchRnMngList.do | svc::/cm/bsis/searchZipAddrMngList.do | svc::/cm/bsis/searchZipRnMapngList.do,NOT_VERIFIED
+src/main/nexacro/form/cm/cmPop/cmAddrP.xfdl,주소검색,svc::/cm/cmPop/searchCityList.do | svc::/cm/cmPop/searchJibunAddrList.do | svc::/cm/cmPop/searchRegionSignguList.do | svc::/cm/cmPop/searchRnRepresentList.do | svc::/cm/cmPop/searchSeoulSignguList.do,NOT_VERIFIED
+src/main/nexacro/form/cm/cmPop/cmAddrRnP.xfdl,주소검색,svc::/cm/cmPop/searchCityList.do | svc::/cm/cmPop/searchRegionSignguList.do | svc::/cm/cmPop/searchRnList.do,NOT_VERIFIED
+src/main/nexacro/form/cm/cmPop/cmAlertP.xfdl,공통 경고,,NOT_VERIFIED
+src/main/nexacro/form/cm/cmPop/cmArvCdP.xfdl,세입코드 조회,svc::/cm/bsis/searchArvCdPopupList.do,NOT_VERIFIED
+src/main/nexacro/form/cm/cmPop/cmBankP.xfdl,은행지점 조회,svc::/cm/bsis/searchBankCdPList.do,NOT_VERIFIED
+src/main/nexacro/form/cm/cmPop/cmBbsMainNtcP.xfdl,메인화면_공지사항,svc::/cm/bbs/searchBbsNtcDetail.do,NOT_VERIFIED
+src/main/nexacro/form/cm/cmPop/cmBbsNtcIconP.xfdl,메인상단_공지사항,svc::/cm/bbs/modifyBbsSearchCnt.do | svc::/cm/bbs/searchBbsNtcDetail.do | svc::/cm/bbs/searchBbsNtcPopup.do,NOT_VERIFIED
+src/main/nexacro/form/cm/cmPop/cmBbsQnaHelpP.xfdl,처리 상태 기준 확인,svc::/cm/bbs/searchBbsQnaHelp.do,NOT_VERIFIED
+src/main/nexacro/form/cm/cmPop/cmCdValP.xfdl,입력값코드 조회,svc::/cm/bsis/searchCdValPopUp.do,NOT_VERIFIED
+src/main/nexacro/form/cm/cmPop/cmCmCdP.xfdl,공통코드 조회,svc::/cm/bsis/searchCmCdDtalPop.do | svc::/cm/bsis/searchCmCdPop.do,NOT_VERIFIED
+src/main/nexacro/form/cm/cmPop/cmCmLwrCdP.xfdl,공통코드 조회,svc::/cm/bsis/searchCmCdDtalPop.do | svc::/cm/bsis/searchCmCdLwrPop.do,NOT_VERIFIED
+src/main/nexacro/form/cm/cmPop/cmConfirm2P.xfdl,공통 컨펌,,NOT_VERIFIED
+src/main/nexacro/form/cm/cmPop/cmConfirmP.xfdl,공통 컨펌,,NOT_VERIFIED
+src/main/nexacro/form/cm/cmPop/cmCrfReportD.xfdl,보고서출력(Divsion),,NOT_VERIFIED
+src/main/nexacro/form/cm/cmPop/cmCrfReportFaxP.xfdl,보고서팩스전송,,NOT_VERIFIED
+src/main/nexacro/form/cm/cmPop/cmCrfReportP.xfdl,보고서출력,,NOT_VERIFIED
+src/main/nexacro/form/cm/cmPop/cmCsCdP.xfdl,수계 및 업태 코드 찾기,svc::/cm/bsis/searchMCdSearch.do | svc::/cm/bsis/searchSCdSearch.do,NOT_VERIFIED
+src/main/nexacro/form/cm/cmPop/cmCsSearchP.xfdl,사용자검색,,NOT_VERIFIED
+src/main/nexacro/form/cm/cmPop/cmDataCntrWorkTimeP.xfdl,서초데이터센터작업시간,svc::/cm/usr/modifyStopJob.do | svc::/cm/usr/searchStopJob.do,NOT_VERIFIED
+src/main/nexacro/form/cm/cmPop/cmDeptCdP.xfdl,부서 조회,svc::/cm/cmPop/searchDeptCdSearch.do,NOT_VERIFIED
+src/main/nexacro/form/cm/cmPop/cmDongCdP.xfdl,동코드 조회,svc::/cm/cmPop/searchDongCdList.do,NOT_VERIFIED
+src/main/nexacro/form/cm/cmPop/cmEmailSndngP.xfdl,이메일전송,svc::/cm/fileUpload/deleteAtchFileHard.do,NOT_VERIFIED
+src/main/nexacro/form/cm/cmPop/cmExcelPwP.xfdl,엑셀 암호 입력,,NOT_VERIFIED
+src/main/nexacro/form/cm/cmPop/cmExcRsnRegP.xfdl,엑셀다운로드 사유 등록,svc::/cm/oper/registExcDwnLogMng.do,NOT_VERIFIED
+src/main/nexacro/form/cm/cmPop/cmFaxSndngP.xfdl,팩스전송,,NOT_VERIFIED
+src/main/nexacro/form/cm/cmPop/cmFileUploadP.xfdl,파일 업로드/다운로드,svc::/cm/fileUpload/deleteFile.do | svc::/cm/fileUpload/fileUploadHistory.do | svc::/cm/fileUpload/fileUploadList.do,NOT_VERIFIED
+src/main/nexacro/form/cm/cmPop/cmGisP.xfdl,지도조회,,NOT_VERIFIED
+src/main/nexacro/form/cm/cmPop/cmGuCdP.xfdl,구코드 조회,svc::/cm/cmPop/searchGuCdSearch.do,NOT_VERIFIED
+src/main/nexacro/form/cm/cmPop/cmGuDongP.xfdl,"구,동 코드 찾기",svc::/cm/cmPop/searchDongCdSearch.do | svc::/cm/cmPop/searchGuCdSearch.do,NOT_VERIFIED
+src/main/nexacro/form/cm/cmPop/cmGuDongSelfHanamP.xfdl,"구,동 코드 찾기",svc::/cm/cmPop/searchDongCdHanamSearch.do | svc::/cm/cmPop/searchGuCdSearch.do,NOT_VERIFIED
+src/main/nexacro/form/cm/cmPop/cmGuDongSelfP.xfdl,"구,동 코드 찾기",svc::/cm/cmPop/searchDongCdSearch.do | svc::/cm/cmPop/searchGuCdSearch.do,NOT_VERIFIED
+src/main/nexacro/form/cm/cmPop/cmHelpViewP.xfdl,도움말,svc::/cm/hp/insertHelpUseLog.do | svc::/cm/hp/selectHpGuideByMenu.do | svc::/cm/hp/selectHpGuideDetail.do,NOT_VERIFIED
+src/main/nexacro/form/cm/cmPop/cmHgyeGmokSmokP.xfdl,회계과목세목 조회,svc::/cm/bsis/searchSmokCdPopupList.do,NOT_VERIFIED
+src/main/nexacro/form/cm/cmPop/cmJobStatusMngP.xfdl,해야 할 일 설정,svc::/cm/main/modifyMyJob.do | svc::/cm/usr/selectUsrJobList.do,NOT_VERIFIED
+src/main/nexacro/form/cm/cmPop/cmJobTelP.xfdl,업무 문의,svc::/cm/usr/searchJobChrger.do | svc::/cm/usr/searchJobChrgerByDong.do,NOT_VERIFIED
+src/main/nexacro/form/cm/cmPop/cmMsgP.xfdl,메세지 팝업,,NOT_VERIFIED
+src/main/nexacro/form/cm/cmPop/cmMyInfoUpdateP.xfdl,나의 정보 수정,svc::/cm/user/modifyMyInfoUdt.do | svc::/cm/user/searchMyInfoUdt.do,NOT_VERIFIED
+src/main/nexacro/form/cm/cmPop/cmPhotoUploadP.xfdl,사진 업로드/다운로드,svc::/cm/fileUpload/deleteFile.do | svc::/cm/fileUpload/fileUploadList.do,NOT_VERIFIED
+src/main/nexacro/form/cm/cmPop/cmRaInfoMngP.xfdl,담당지역 선택,svc::/cm/usr/insertUsrRgnList.do | svc::/cm/usr/selectAreaPopupList.do,NOT_VERIFIED
+src/main/nexacro/form/cm/cmPop/cmReportP.xfdl,보고서출력,svc::/cm/bsis/searchSheetEstbsMng.do,NOT_VERIFIED
+src/main/nexacro/form/cm/cmPop/cmSiteMap.xfdl,사이트맵,svc::/cm/main/selectSiteMapMenuList.do,NOT_VERIFIED
+src/main/nexacro/form/cm/cmPop/cmSiteMap_bak.xfdl,New Form,,NOT_VERIFIED
+src/main/nexacro/form/cm/cmPop/cmSmsSndngP.xfdl,문자전송,svc::/cm/cmPop/searchSmsAddr.do | svc::/cm/fileUpload/deleteAtchFileHard.do,NOT_VERIFIED
+src/main/nexacro/form/cm/cmPop/cmTempLoginMngP.xfdl,임시 로그인 관리,svc::/cm/login/searchTempLoginInfo.do | svc::/cm/login/updateTempLoginInfo.do,NOT_VERIFIED
+src/main/nexacro/form/cm/main/cmBoard.xfdl,게시판,svc::/cm/bbs/searchBoardMain.do,NOT_VERIFIED
+src/main/nexacro/form/cm/main/cmCalendarF.xfdl,시스템일정,svc::/cm/bsis/searchHldyMng.do | svc::/cm/bsis/searchWorkDayMng.do | svc::/cm/main/searchUsrSchdulList.do | svc::/cm/myPage/updateTaskStatus.do,NOT_VERIFIED
+src/main/nexacro/form/cm/main/cmNtcBannerF.xfdl,중요 공지 알림,svc::/cm/bbs/searchMainRollingList.do,NOT_VERIFIED
+src/main/nexacro/form/cm/mypage/cmDayMngP.xfdl,일별일정관리,,NOT_VERIFIED
+src/main/nexacro/form/cm/mypage/cmEltSanctnMngF.xfdl,전자결재 내역,svc::/cm/oper/searchMyElectSanctnHist.do,NOT_VERIFIED
+src/main/nexacro/form/cm/mypage/cmJobAlrmF.xfdl,업무알리미,svc::/cm/myPage/searchChenapDfctDps.do | svc::/cm/myPage/searchChenapEstateSeizrRegDtlsUsr.do | svc::/cm/myPage/searchChenapEstateSeizrRegUsr.do | svc::/cm/myPage/searchChenapRecentStatus.do | svc::/cm/myPage/searchChenapSwaterTargetUsr.do | svc::/cm/myPage/searchMainJobDtctCnt.do | svc::/cm/myPage/searchMainJobDtctDtls.do,NOT_VERIFIED
+src/main/nexacro/form/cm/mypage/cmJobProcHistF.xfdl,업무처리 내역,svc::/cm/myPage/reDoSndngEmail.do | svc::/cm/myPage/reDoSndngUMS.do | svc::/cm/myPage/searchEmaiilSndngHstList.do | svc::/cm/myPage/searchUmsSndngHstList.do,NOT_VERIFIED
+src/main/nexacro/form/cm/mypage/cmMkeyHistF.xfdl,고객번호 조회 내역,svc::/cm/myPage/getMkeyHistList.do,NOT_VERIFIED
+src/main/nexacro/form/cm/mypage/cmMyInqHistF.xfdl,나의 문의 내역,svc::/cm/bbs/searchMyQnaList.do,NOT_VERIFIED
+src/main/nexacro/form/cm/mypage/cmMySchMngF.xfdl,나의 일정,svc::/cm/myPage/searchUsrSchdul.do | svc::/cm/myPage/updateTaskStatus.do,NOT_VERIFIED
+src/main/nexacro/form/cm/mypage/cmMySchRegP.xfdl,나의 일정 등록,svc::/cm/myPage/deleteUsrSchdul.do | svc::/cm/myPage/registUsrSchdul.do | svc::/cm/myPage/updateUsrSchdul.do,NOT_VERIFIED
+src/main/nexacro/form/cm/mypage/cmMySchUpdP.xfdl,나의 일정 수정,svc::/cm/auth/deleteAuth.do | svc::/cm/auth/insertAuth.do | svc::/cm/authrt/selectAuthrt.do | svc::/cm/authrt/updateAuth.do,NOT_VERIFIED
+src/main/nexacro/form/cm/oper/cmBatchOperMngF.xfdl,배치 작업 관리,svc::/cm/oper/executeBatch.do | svc::/cm/oper/executeManual.do | svc::/cm/oper/modifyBatch.do | svc::/cm/oper/registBatch.do | svc::/cm/oper/removeBatch.do | svc::/cm/oper/searchBatchHistList.do | svc::/cm/oper/searchBatchList.do,NOT_VERIFIED
+src/main/nexacro/form/cm/oper/cmBillFormHistF.xfdl,고지서 양식 관리,svc::/cm/oper/deleteBillFormHist.do | svc::/cm/oper/insertBillFormHist.do | svc::/cm/oper/searchBillFormList.do | svc::/cm/oper/updateBillFormHist.do,NOT_VERIFIED
+src/main/nexacro/form/cm/oper/cmCntcHistF.xfdl,서비스 연계 이력,svc::/cm/oper/searchCntcHist.do,NOT_VERIFIED
+src/main/nexacro/form/cm/oper/cmCntcMngF.xfdl,연계 서비스 정보 관리,svc::/cm/oper/deleteCntcProgrm.do | svc::/cm/oper/insertCntcProgrm.do | svc::/cm/oper/searchCntcProgrm.do | svc::/cm/oper/updateCntcProgrm.do,NOT_VERIFIED
+src/main/nexacro/form/cm/oper/cmCronTabSetP.xfdl,배치처리 주기 CronTab 명령 구성,,NOT_VERIFIED
+src/main/nexacro/form/cm/oper/cmDaySchdulMngP.xfdl,배치 작업 일정 일별 관리,,NOT_VERIFIED
+src/main/nexacro/form/cm/oper/cmEltNtHstF.xfdl,이메일고지이력,svc::/cm/oper/reDoEltNt.do | svc::/cm/oper/searchEltNtHstList.do | svc::/cm/oper/searchEmailSndDsc.do | svc::/cm/oper/sendSmsEltNt.do,NOT_VERIFIED
+src/main/nexacro/form/cm/oper/cmEltSanctnMngF.xfdl,전자결재 이력 관리,svc::/cm/oper/reDoElectSanctn.do | svc::/cm/oper/searchElectSanctnHist.do | svc::/cm/oper/searchEltErrList.do | svc::/cm/oper/searchEscbrdProcessList.do,NOT_VERIFIED
+src/main/nexacro/form/cm/oper/cmHelpSmF.xfdl,도움말 이용 집계,svc::/cm/hp/selectHpGuideSummary.do,NOT_VERIFIED
+src/main/nexacro/form/cm/oper/cmIssueMngF.xfdl,오류 관리,svc::/cm/fileUpload/fileUploadList.do | svc::/cm/oper/deleteIssueMng.do | svc::/cm/oper/insertIssueMng.do | svc::/cm/oper/searchAllComboList.do | svc::/cm/oper/searchIssueMngList.do | svc::/cm/oper/searchPgmCdList.do | svc::/cm/oper/searchSysSeCdList.do | svc::/cm/oper/searchTaskSeCdList.do | svc::/cm/oper/updateIssueMng.do,NOT_VERIFIED
+src/main/nexacro/form/cm/oper/cmIssueRegP.xfdl,오류 등록,svc::/cm/fileUpload/fileUploadList.do | svc::/cm/oper/insertIssueMng.do | svc::/cm/oper/searchMenuInfo.do | svc::/cm/oper/searchPgmCdList.do | svc::/cm/oper/searchSysSeCdList.do | svc::/cm/oper/searchTaskSeCdList.do,NOT_VERIFIED
+src/main/nexacro/form/cm/oper/cmSchdulDtalP.xfdl,배치 작업 일정 상세 팝업,svc::/cm/oper/searchProcSchdulDetailList.do,NOT_VERIFIED
+src/main/nexacro/form/cm/oper/cmSchdulMngF.xfdl,배치 작업 일정 확인,svc::/cm/oper/searchProcSchdulList.do,NOT_VERIFIED
+src/main/nexacro/form/cm/oper/cmTaskMngF.xfdl,과업 및 민원 관리,svc::/cm/oper/modifyTaskMng.do | svc::/cm/oper/registTaskMng.do | svc::/cm/oper/removeTaskMng.do | svc::/cm/oper/searchTaskMngList.do,NOT_VERIFIED
+src/main/nexacro/form/cm/user/cmAuthAplyF.xfdl,권한 신청,svc::/cm/auth/authAplyList.do | svc::/cm/auth/selectAreaList.do | svc::/cm/auth/selectAuthAplyList.do | svc::/cm/auth/selectBdongListByOfficeCd.do | svc::/cm/bbs/selectUtztnTrmsNeedAgreSysList.do,NOT_VERIFIED
+src/main/nexacro/form/cm/user/cmAuthChgP.xfdl,권한변경신청,svc::/cm/usr/saveAuthChg.do | svc::/cm/usr/selectAuthApovList.do,NOT_VERIFIED
+src/main/nexacro/form/cm/user/cmAuthHstryP.xfdl,권한이력목록,svc::/cm/usr/selectUsrAuthHstryList.do,NOT_VERIFIED
+src/main/nexacro/form/cm/user/cmAuthMenuP.xfdl,권한목록팝업,svc::/cm/auth/selectAuthTreeList.do | svc::/cm/auth/selectAuthrtMenuTreeList.do,NOT_VERIFIED
+src/main/nexacro/form/cm/user/cmAuthMndtP.xfdl,권한위임,svc::/cm/usr/deleteAuthMndt.do | svc::/cm/usr/insertAuthMndt.do | svc::/cm/usr/selectAuthApovList.do | svc::/cm/usr/selectAuthMndt.do | svc::/cm/usr/selectDelegateAuthList.do,NOT_VERIFIED
+src/main/nexacro/form/cm/user/cmAuthMngF.xfdl,권한관리,svc::/cm/auth/saveAuth.do | svc::/cm/auth/saveAuthMenuList.do | svc::/cm/auth/selectAuth.do | svc::/cm/auth/selectAuthTreeList.do | svc::/cm/auth/selectAuthUsrList.do | svc::/cm/auth/selectAuthrtMenuTreeList.do,NOT_VERIFIED
+src/main/nexacro/form/cm/user/cmAuthMngP.xfdl,권한목록팝업,svc::/cm/auth/selectAuthTreeList.do,NOT_VERIFIED
+src/main/nexacro/form/cm/user/cmCsUmsFileP.xfdl,고객 첨부파일 조회,svc::/cm/cmPop/deleteFileReqUms.do | svc::/cm/cmPop/registFileReqUms.do | svc::/cm/cmPop/searchFileReqUms.do,NOT_VERIFIED
+src/main/nexacro/form/cm/user/cmJobChrgerMngF.xfdl,업무 담당자 관리,svc::/cm/user/searchUsr.do | svc::/cm/usr/modifyJobChrger.do | svc::/cm/usr/modifyJobChrgerUseFlag.do | svc::/cm/usr/registJobChrger.do | svc::/cm/usr/removeJobChrger.do | svc::/cm/usr/searchJobChrger.do,NOT_VERIFIED
+src/main/nexacro/form/cm/user/cmLoginHistF.xfdl,로그인 이력,svc::/cm/login/searchLoginHist.do | svc::/cm/usr/searchUsr.do,NOT_VERIFIED
+src/main/nexacro/form/cm/user/cmMenuMngF.xfdl,메뉴관리,svc::/cm/menu/saveMenu.do | svc::/cm/menu/saveMenuAuthList.do | svc::/cm/menu/selectMenuAuthList.do | svc::/cm/menu/selectMenuList.do | svc::/cm/menu/selectMenuTreeList.do | svc::/cm/menu/selectMenuUsrList.do,NOT_VERIFIED
+src/main/nexacro/form/cm/user/cmPgmMngF.xfdl,프로그램관리,svc::/cm/pgm/savePgm.do | svc::/cm/pgm/savePgmDtl.do | svc::/cm/pgm/selectPgmDetailList.do | svc::/cm/pgm/selectPgmTreeObjList.do,NOT_VERIFIED
+src/main/nexacro/form/cm/user/cmPgmP.xfdl,프로그램조회팝업,svc::/cm/pgm/selectPgmList.do,NOT_VERIFIED
+src/main/nexacro/form/cm/user/cmSstvInfoIdNoP.xfdl,민감정보팝업-주민등록번호,svc::/cm/user/searchSstvInfoIdNoPop.do,NOT_VERIFIED
+src/main/nexacro/form/cm/user/cmUsrCctvInfoHistF.xfdl,민감정보 조회이력,svc::/cm/user/searchSstvInfoList.do | svc::/cm/user/searchSstvQualfInfoList.do | svc::/cm/usr/searchUsr.do,NOT_VERIFIED
+src/main/nexacro/form/cm/user/cmUsrMenuInfoHistF.xfdl,사용자별 메뉴 조회이력,svc::/cm/user/searchUsrPerMenuList.do | svc::/cm/user/selectPgmIdByPgmNm.do | svc::/cm/usr/selectUsrIdByUsrNm.do,NOT_VERIFIED
+src/main/nexacro/form/cm/user/cmUsrMngF.xfdl,시스템 사용자 정보 관리,svc::/cm/usr/apovAuthUsr.do | svc::/cm/usr/apovUsrList.do | svc::/cm/usr/rejectUsrList.do | svc::/cm/usr/saveUsrInfo.do | svc::/cm/usr/searchUsrList.do | svc::/cm/usr/selectAuthAplyUsr.do | svc::/cm/usr/selectAuthComboList.do,NOT_VERIFIED
+src/main/nexacro/form/cm/user/cmUsrP.xfdl,담당자조회팝업,svc::/cm/usr/searchUsr.do,NOT_VERIFIED
+src/main/nexacro/form/cm/user/cmUsrRjctP.xfdl,일괄회수팝업,,NOT_VERIFIED
+src/main/nexacro/form/cm/user/cmUtztnTrmsP.xfdl,정책동의,svc::/cm/bbs/selectUtztnTrmsList.do,NOT_VERIFIED
+src/main/nexacro/common/cmmCalMonth.xfdl,월력,,NOT_VERIFIED
+src/main/nexacro/common/cmmCalMonth02.xfdl,월력,,NOT_VERIFIED
+src/main/nexacro/common/cmmFindGrid.xfdl,그리드내 검색,,NOT_VERIFIED
+src/main/nexacro/common/cmmGetDatasets.xfdl,Dataset 정보 보기,,NOT_VERIFIED
+src/main/nexacro/common/cmmPopup.xfdl,공통팝업,,NOT_VERIFIED
+src/main/nexacro/frame/cmMainF.xfdl,프로젝트 Main,,NOT_VERIFIED
+src/main/nexacro/frame/frmLeft.xfdl,LeftFrame,svc::/cm/main/deleteIseMenu.do | svc::/cm/main/searchIseMenuList.do,NOT_VERIFIED
+src/main/nexacro/frame/frmLeftTopMenu.xfdl,LeftFrame,,NOT_VERIFIED
+src/main/nexacro/frame/frmLogin.xfdl,LoginFrame,,NOT_VERIFIED
+src/main/nexacro/frame/frmMain.xfdl,MainFrame,svc::/cm/bbs/searchBbsNtcPopup.do | svc::/cm/main/login.do | svc::/cm/main/searchChenapPropertySeizrUsr.do | svc::/cm/main/searchChenapSwaterUsr.do | svc::/cm/main/searchCmCd.do | svc::/cm/main/searchGisOptapNticeCnt.do | svc::/cm/main/searchMainUnAdjAnactCnt.do | svc::/cm/main/searchRdcxptTgTotalCnt.do | svc::/cm/main/searchSunapUnprocessed.do | svc::/cm/usr/selectUsrJobList.do,NOT_VERIFIED
+src/main/nexacro/frame/frmMdi.xfdl,MdiFrame,,NOT_VERIFIED
+src/main/nexacro/frame/frmTop.xfdl,TopFrame,svc::/cm/bbs/searchNtcIconStatus.do | svc::/cm/main/refresh.do | svc::/cm/main/sessionCheck.do | svc::/cm/oper/searchMyElectSanctnDraftCnt.do | svc::/cm/usr/selectUsrAreaSummaryList.do | svc::/cm/usr/selectUsrJobList.do,NOT_VERIFIED
+src/main/nexacro/frame/frmTop_btn.xfdl,TopFrame,,NOT_VERIFIED
+src/main/nexacro/frame/frmTop_copy0.xfdl,TopFrame,,NOT_VERIFIED
+src/main/nexacro/frame/frmWork.xfdl,WorkFrame,svc::/cm/hp/insertHelpUseLog.do | svc::/cm/hp/selectHpGuideByMenu.do | svc::/cm/main/searchIseMenu.do,NOT_VERIFIED
+src/main/nexacro/frame/frmWorkPu.xfdl,WorkFrame,,NOT_VERIFIED
+src/main/nexacro/frame/frmWorkSpace.xfdl,WorkSpace,,NOT_VERIFIED
+src/main/nexacro/frame/frmWorkTitleDv.xfdl,WorkFrameTitle,,NOT_VERIFIED

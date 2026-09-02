@@ -14,9 +14,10 @@ import org.springframework.stereotype.Service;
 
 /**
  * 권한 부여·회수와 메뉴 마스터·권한 매핑 변경을 조정하는 관리 서비스다.
- * 컨트롤러의 입력 형식과 인메모리 저장소 변경 사이에서 업무 검증과 감사 기록을 한곳에 수행한다.
+ * 컨트롤러의 입력과 저장소 변경 사이에서 업무 검증과 감사 기록을 한곳에 수행한다.
  */
 @Service
+@com.example.permissiondemo.storage.StateBoundary
 public class AdminService {
 
     private static final LocalDate DEFAULT_FROM = LocalDate.of(2020, 1, 1);
@@ -81,7 +82,7 @@ public class AdminService {
                 .orElseThrow(() -> new ApiException(ErrorCode.RESOURCE_NOT_FOUND, username));
         AuthorizationCatalog.AuthorityDefinition authority = catalog.findAuthority(authorityId)
                 .orElseThrow(() -> new ApiException(ErrorCode.RESOURCE_NOT_FOUND, authorityId));
-        if (!authority.active()) {
+        if (!target.active() || !authority.active()) {
             throw new ApiException(ErrorCode.CONFLICT, authorityId);
         }
         LocalDate resolvedFrom = validFrom == null ? DEFAULT_FROM : validFrom;

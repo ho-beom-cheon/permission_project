@@ -1,23 +1,29 @@
-# 권한·메뉴·프로그램·공통코드 독립 테스트 프로젝트
+# ARISUINFO 공통 업무 이관 프로젝트
+
+> 현재 개발 목표는 **ARISUINFO 공통 영역 전체 이관**입니다. 아래 설명은 기존 샘플의 현재 구현 상태이며,
+> 이관 제외 기준이 아닙니다. 범위·완료 조건·원본 데이터 보호 기준은 [전체 이관 기준](MIGRATION_SCOPE.md)을 따릅니다.
+
+추가한 사용자·조직·기준정보·출력문구, 권한 신청·일괄 회수, 게시판 구분·첨부·도움말, 개인 일정·알림, 과업·이슈, 접속 사용자 화면은 [실행 및 업무 안내](migration/LOCAL_RUNBOOK.md)를 참고하세요. [이관 현황](migration/IMPLEMENTATION_STATUS.md)에 검증 결과와 미완료 항목을 기록합니다.
 
 ARISUINFO의 권한 및 공통 처리 개념을 Nexacro 없이 확인할 수 있도록 만든 Java 17 / Spring Boot 샘플입니다.
 
-- 대상 경로: `C:\Users\이명주\Desktop\cheon\test`
+- 대상 경로: `C:\workspace\permission_project`
 - 원본 `C:\arisuinfo`와 `C:\arisuccs`는 수정하지 않습니다.
-- DB, Nexacro Runtime, XFDL, Dataset, `BaseController`, 사내 SSO가 없어도 실행됩니다.
+- 외부 DB, Nexacro Runtime, XFDL, Dataset, `BaseController`, 사내 SSO 없이 내장 H2로 실행됩니다.
 - 모든 업무 권한은 요청 파라미터가 아닌 로그인 세션의 사용자명과 현재 조직으로 서버가 계산합니다.
 - 사용자·메뉴·기능 권한·관심 메뉴·공통코드를 `/api/bootstrap` 한 번으로 초기화합니다.
 - 오류 응답에는 공통 오류 코드, 요청 경로와 `traceId`가 포함됩니다.
 - 권한 마스터, 직접 부여·위임·회수, 메뉴 속성·권한 매핑, 프로그램·기능·권한 매핑과 공통코드 편집 화면을 제공합니다.
 - 로그인 후 실제 업무형 사용자 포털로 진입하며 권한별 메뉴·기능 버튼·공통코드 상태를 화면에 반영합니다.
 - 관리 변경은 사용자 포털에서 15초마다 자동 확인하거나 `권한 새로고침`으로 즉시 반영할 수 있습니다.
-- 로그인·로그아웃·인가 거부·권한·메뉴·관심 메뉴·공통코드 변경을 인메모리 감사 이력으로 확인할 수 있습니다.
+- 로그인·로그아웃·인가 거부·업무 변경 이력을 신규 로컬 DB에 보존합니다. 원본 INFO DB에는 연결하지 않습니다.
 - 알려진 데모 계정 보호를 위해 기본 프로필은 `demo`, 바인딩 주소는 `127.0.0.1`이며 다른 프로필은 기동에 실패합니다.
 
 원본 구조와 차이점은 [ARISUINFO_PERMISSION_ANALYSIS.md](ARISUINFO_PERMISSION_ANALYSIS.md)에 상세히 정리했습니다.
 
 ## 매뉴얼
 
+- [빠른 도움말](QUICK_START_HELP.md): 처음 실행, 계정 선택, 화면별 사용 순서와 문제 해결 요약
 - [사용자 매뉴얼](USER_MANUAL.md): 실행, 로그인, 계정별 테스트, 화면 사용법, 오류 확인
 - [개발자 매뉴얼](DEVELOPER_MANUAL.md): 구조, 권한 판정, API, 보안, 테스트, 실제 DB 전환 방법
 - [INFO 대비 보강 명세](INFO_UPGRADE_COMPARISON.md): 기존 INFO 처리, 개선 이유, 현재 구현 및 남은 범위 비교
@@ -31,7 +37,7 @@ ARISUINFO의 권한 및 공통 처리 개념을 Nexacro 없이 확인할 수 있
 - Maven 3.9 이상
 
 ```powershell
-cd 'C:\Users\이명주\Desktop\cheon\test'
+cd 'C:\workspace\permission_project'
 .\mvnw.cmd clean test
 .\mvnw.cmd spring-boot:run
 ```
@@ -74,7 +80,7 @@ cd 'C:\Users\이명주\Desktop\cheon\test'
 
 | 파일 | 역할 |
 |---|---|
-| `AuthorizationCatalog` | 수정 가능한 권한·메뉴·프로그램·기능 마스터와 사용자·권한 매핑의 인메모리 기준 데이터 |
+| `AuthorizationCatalog` | 권한·메뉴·프로그램·기능 마스터와 사용자·권한 매핑. 로컬 상태 저장에 참여 |
 | `AdminService` | 권한·메뉴·프로그램 마스터 저장, 사용자 권한과 권한별 메뉴·기능 매핑 및 감사 기록 조정 |
 | `EffectiveAuthorityService` | 현재 조직의 최신 이력, 승인 상태, 유효기간, 활성 권한, 위임자 원천 권한을 확인해 유효 권한 합집합 계산 |
 | `MenuAuthorizationService` | 공용 메뉴 + 권한 메뉴, 숨김/비활성 제외, 상위 메뉴 보존, 순서 정렬 |
@@ -82,10 +88,10 @@ cd 'C:\Users\이명주\Desktop\cheon\test'
 | `CurrentUserContext` | 인증 사용자, 현재 조직, 원격 IP, 요청 `traceId`를 공통 제공 |
 | `BootstrapService` | 사용자·메뉴·전체 허용 기능·관심 메뉴·공통코드·버전의 일관된 초기 스냅샷 구성 |
 | `FavoriteMenuService` | 현재 접근 가능한 메뉴만 사용자 관심 메뉴로 등록·조회·삭제 |
-| `AuditEventService` | 보안·변경 이벤트를 최근 500건까지 보관하고 공통 페이징으로 조회 |
+| `AuditEventService` | 보안·변경 이벤트를 영속 보존하고 공통 페이징으로 조회 |
 | `SecurityConfig` | 세션 로그인, CSRF, 인증/인가 실패 JSON, 데모 사용자 구성 |
 | `LoginController` | GET `/login`을 자체 로그인 화면에 연결하고 POST `/login`은 Spring Security에 위임 |
-| `CommonCodeService` | 계층·적용기간·활성 상태·그룹 버전·조회 캐시를 포함한 인메모리 공통코드 |
+| `CommonCodeService` | 그룹·상세·하위·적용기간·활성·표시 정보·그룹 버전 및 영속 저장 |
 | `ApiExceptionHandler` | 검증·인가·리소스·예상하지 못한 오류의 공통 JSON 응답 처리 |
 | `TraceIdFilter` | 모든 HTTP 요청에 추적 ID를 부여하고 응답 헤더와 오류 본문에 반환 |
 | `PageQuery` / `PageResult` | 최대 100건으로 제한된 0 기반 공통 페이징 계약 |
@@ -199,7 +205,7 @@ Linux CI에서는 `./mvnw --batch-mode --no-transfer-progress clean verify`를 �
 
 ## 9. 실제 DB 연계 시 교체 지점
 
-현재 데이터는 재시작 시 초기화됩니다. 실제 적용에서는 다음만 Repository/Mapper로 교체하고 서비스 계약은 유지하는 방식을 권장합니다.
+현재 데이터는 신규 내장 H2의 `data/common-work.mv.db`에 저장하고 재시작 시 복원합니다. 영역별 JSON 상태와 별도 첨부 BLOB을 사용하는 단계이며 원본 정규화 스키마와 동등하지 않습니다. 아래는 향후 승인된 별도 운영 저장소로 분리할 때의 검토 대상입니다. 원본 INFO DB를 쓰기 대상으로 사용하지 않습니다.
 
 1. `AuthorizationCatalog.authorities()` → 권한 마스터 조회
 2. `assignmentsFor(username)` → 현재 조직의 사용자 최신 승인 이력 + 유효 위임 조회

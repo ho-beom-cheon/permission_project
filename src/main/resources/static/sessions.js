@@ -1,0 +1,4 @@
+import {el,api,run,initialize,feedback,allowed,cell,button} from './work-ui.js';
+let canWrite=false;
+async function load(){const values=await api('/api/admin/sessions');el('rows').replaceChildren();for(const value of values){const row=document.createElement('tr');[value.username,value.reference.slice(0,12),new Date(value.lastRequest).toLocaleString('ko-KR'),value.expired?'종료 처리됨':'접속 중'].forEach(v=>cell(row,v));const action=button('접속 종료',async()=>{if(!confirm(`${value.username} 사용자의 이 세션을 종료할까요?`))return;await api(`/api/admin/sessions/${value.reference}/expire`,'POST');await load();});action.disabled=!canWrite||value.expired;cell(row,'').append(action);el('rows').append(row);}feedback(`${values.length}개 세션을 조회했습니다.`);}
+el('refresh').addEventListener('click',()=>run(load));run(async()=>{const context=await initialize();canWrite=allowed(context,'SYSTEM_AUTH','AUTHORITY','AUTHORITY_UPDATE');await load();});
