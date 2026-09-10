@@ -1,6 +1,8 @@
 package com.example.permissiondemo.authorization;
 
 import java.util.*;
+import java.time.Clock;
+import java.time.Instant;
 import com.example.permissiondemo.audit.AuditEventService;
 import com.example.permissiondemo.common.InboxService;
 import com.example.permissiondemo.storage.StateBoundary;
@@ -15,6 +17,13 @@ public class AuthorityRevocationService {
     private final AuthorizationCatalog catalog;
     private final AuditEventService audit;
     private final InboxService inbox;
+    private AuthorityHistoryService history;
+    private SsoAuthorityScopeService scopes;
+    private Clock clock = Clock.systemDefaultZone();
+    @org.springframework.beans.factory.annotation.Autowired
+    public void setSsoScopes(SsoAuthorityScopeService scopes, Clock clock) { this.scopes = scopes; this.clock = clock; }
+    @org.springframework.beans.factory.annotation.Autowired
+    public void setHistory(AuthorityHistoryService history) { this.history = history; }
     public AuthorityRevocationService(AuthorizationCatalog catalog,AuditEventService audit,InboxService inbox){this.catalog=catalog;this.audit=audit;this.inbox=inbox;}
     public Plan preview(Request request){synchronized(catalog){return plan(request);}}
     public Plan revoke(Request request){
@@ -22,7 +31,18 @@ public class AuthorityRevocationService {
             if(request==null||request.reason()==null||request.reason().isBlank()||request.reason().length()>1000)throw new IllegalArgumentException("회수 사유는 1~1000자로 입력해 주세요.");
             Plan plan=plan(request);if(plan.assignments().isEmpty())throw new ApiException(ErrorCode.CONFLICT,"회수할 승인 권한이 없습니다.");
             List<AuthorizationCatalog.AuthorityAssignment> revoked=new ArrayList<>();
-            for(var assignment:plan.assignments())revoked.add(catalog.revokeAssignment(assignment.username(),assignment.authorityId(),assignment.type()));
+            for(var assignment:plan.assignments()){
+                AuthorizationCatalog.AuthorityAssignment item;
+                if (scopes != null && scopes.isEnabled(assignment.username())) {
+                    var scope = scopes.requireCurrentScope(assignment.username());
+                    scopes.requireLatest(assignment, scope);
+                    item = catalog.processScopedAssignment(assignment, AuthorizationCatalog.AssignmentStatus.REVOKED,
+                            assignment.validFrom(), assignment.validTo());
+                    scopes.record(item, scope, Instant.now(clock));
+                } else item=catalog.revokeAssignment(assignment.username(),assignment.authorityId(),assignment.type());
+                revoked.add(item);
+                if(history!=null)history.recordAssignment(item,null,null,null,request.reason().trim());
+            }
             for(String username:plan.assignments().stream().map(AuthorizationCatalog.AuthorityAssignment::username).distinct().toList()){
                 inbox.deliver(username,"AUTHORITY_REVOKE:"+catalog.authorityVersion(),"업무 권한이 회수되었습니다.",request.systemId()+" · "+request.reason().trim(),"/authority-requests.html");
             }
@@ -39,6 +59,11 @@ public class AuthorityRevocationService {
         for(Target target:request.targets()){
             var user=catalog.findUser(target.username()).orElseThrow(()->new ApiException(ErrorCode.RESOURCE_NOT_FOUND,target.username()));
             if(!user.organizationId().equals(target.organizationId()))throw new ApiException(ErrorCode.CONFLICT,"선택 사용자의 조직이 변경됐습니다.");
+            if (scopes != null && scopes.isEnabled(user.username())) {
+                result.addAll(scopes.latest(user.username(), scopes.requireCurrentScope(user.username()), request.systemId()).stream()
+                        .filter(a -> a.status() == AuthorizationCatalog.AssignmentStatus.APPROVED).toList());
+                continue;
+            }
             Map<String,AuthorizationCatalog.AuthorityAssignment> latest=new HashMap<>();
             catalog.assignmentsFor(user.username()).stream().filter(a->a.organizationId().equals(user.organizationId()))
                     .filter(a->request.includeDelegated()||a.type()==AuthorizationCatalog.AssignmentType.DIRECT)

@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>업무담당자 조회 | ARISU Works</title><link rel="icon" href="data:,"><link rel="stylesheet" href="/authority-requests.css">
+<script src="/colleagues.js" defer></script></head>
+<body><header><div><small>ARISU WORKS</small><h1>업무담당자 조회</h1></div><nav><a href="/portal.html">사용자 홈</a></nav></header>
+<main><p id="feedback" role="status" aria-live="polite">조회 권한과 소속을 확인하고 있습니다.</p>
+<section><p>등록된 SSO소속을 기준으로 조회합니다. 본부 사용자는 사업소를 선택할 수 있습니다.</p>
+<form id="lookup"><div class="form-grid">
+<label>사용자명<input id="name" type="search" placeholder="사용자명 일부 입력"></label>
+<label>사업소 코드<input id="officeCode" placeholder="본부: 빈 값이면 전체" disabled></label>
+<label>SSO부서명<input id="ssoDepartmentName" type="search" placeholder="SSO부서명 일부 입력"></label>
+<label>권한 ID<input id="authId" type="search" placeholder="권한 ID 정확히 입력"></label>
+<label>처리상태<select id="procStatus"><option value="">전체</option><option value="PENDING">신청</option><option value="APPROVED">승인</option><option value="REJECTED">반려</option><option value="REVOKED">회수</option></select></label>
+<label>시스템 권한 접두어<input id="systemPrefix" type="search" placeholder="권한 ID의 시작 부분"></label>
+</div><button id="searchButton" type="submit" disabled>조회</button></form>
+<p id="scope"></p><div class="table-wrap"><table><thead><tr><th>사용자 ID</th><th>사용자명</th><th>사업소</th><th>SSO부서명</th><th>사용 여부</th></tr></thead><tbody id="people"></tbody></table></div>
+</section></main></body></html>

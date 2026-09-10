@@ -301,8 +301,10 @@ function createInfo(label, value) {
     return box;
 }
 
-/** 서버가 반환한 기능 권한만 사용자 콘텐츠 화면의 조회·작성·게시 버튼에 활성화한다. */
+/** 서버가 반환한 기능 권한으로 업무 링크와 조회·작성·게시 버튼을 제어한다. */
 function enableActions(actions) {
+    document.getElementById('colleaguesLink').hidden = !actions.some(action =>
+        action.menuId === 'SYSTEM_AUTH' && action.programId === 'AUTHORITY' && action.actionId === 'DIRECTORY_LOOKUP');
     document.querySelectorAll('[data-protected]').forEach(button => {
         button.disabled = true;
         button.title = '현재 사용자에게 허용되지 않은 기능입니다.';

@@ -1,6 +1,7 @@
 package com.example.permissiondemo.web;
 
 import com.example.permissiondemo.directory.DirectoryService;
+import com.example.permissiondemo.directory.DirectoryBootstrapImportService;
 import com.example.permissiondemo.directory.LocalAccountService;
 import com.example.permissiondemo.security.CurrentUserContext;
 import com.example.permissiondemo.storage.StateBoundary;
@@ -16,14 +17,30 @@ import org.springframework.web.bind.annotation.*;
 @StateBoundary
 public class DirectoryController {
     private final DirectoryService directory;
+    private final DirectoryBootstrapImportService bootstrapImport;
     private final LocalAccountService accounts;
     private final CurrentUserContext current;
-    public DirectoryController(DirectoryService directory, LocalAccountService accounts, CurrentUserContext current) {
-        this.directory = directory; this.accounts = accounts; this.current = current;
+    public DirectoryController(DirectoryService directory, DirectoryBootstrapImportService bootstrapImport,
+            LocalAccountService accounts, CurrentUserContext current) {
+        this.directory = directory; this.bootstrapImport = bootstrapImport; this.accounts = accounts; this.current = current;
     }
     @GetMapping("/api/admin/directory")
     @PreAuthorize("@programAuthorizationService.isAllowed(authentication, 'SYSTEM_AUTH', 'AUTHORITY', 'AUTHORITY_READ')")
     public ApiResponse<DirectoryService.DirectoryView> view() { return ApiResponse.ok(directory.view()); }
+
+    @GetMapping("/api/admin/directory/people")
+    @PreAuthorize("@programAuthorizationService.isAllowed(authentication, 'SYSTEM_AUTH', 'AUTHORITY', 'AUTHORITY_READ')")
+    public ApiResponse<java.util.List<DirectoryService.Person>> people(@RequestParam(required=false) String name,
+            @RequestParam(required=false) String officeCode, @RequestParam(required=false) Boolean active) {
+        return ApiResponse.ok(directory.searchPeople(name, officeCode, active));
+    }
+
+    @PostMapping("/api/admin/directory/import")
+    @PreAuthorize("@programAuthorizationService.isAllowed(authentication, 'SYSTEM_AUTH', 'AUTHORITY', 'AUTHORITY_UPDATE')")
+    public ApiResponse<DirectoryBootstrapImportService.ImportResult> importDirectory(
+            @RequestBody DirectoryBootstrapImportService.ImportRequest request) {
+        return ApiResponse.ok(bootstrapImport.importRows(request));
+    }
 
     @PostMapping("/api/admin/directory/offices")
     @PreAuthorize("@programAuthorizationService.isAllowed(authentication, 'SYSTEM_AUTH', 'AUTHORITY', 'AUTHORITY_UPDATE')")

@@ -221,9 +221,10 @@ class PermissionApiSecurityTest {
                         hasItem("AUTH_CONTENT_MANAGER")));
 
         mockMvc.perform(delete("/api/admin/users/viewer/authorities/AUTH_CONTENT_MANAGER")
-                        .param("type", "DIRECT")
                         .with(user("admin").roles("AUTHENTICATED_USER"))
-                        .with(csrf()))
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"type\":\"DIRECT\",\"reason\":\"회수 사유\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.status").value("REVOKED"));
 

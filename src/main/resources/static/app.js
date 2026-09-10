@@ -5,6 +5,7 @@ let authorityAdmin = null;
 let menuAdmin = null;
 let programAdmin = null;
 let commonCodeItems = [];
+let authorityImportRows = null;
 const openedWorkspacePages = new Map();
 const workspacePageUrls = Object.freeze({
     '#home': '/admin/home',
@@ -78,6 +79,8 @@ function bindEvents() {
     document.getElementById('btnAuthorityRead').addEventListener('click', () => loadAuthorityView());
     document.getElementById('btnAuthMasterRead').addEventListener('click', () => loadAuthorityView());
     document.getElementById('btnAuthMasterSave').addEventListener('click', saveAuthMaster);
+    document.getElementById('authorityImportFile').addEventListener('change', previewAuthorityImport);
+    document.getElementById('btnAuthorityImport').addEventListener('click', importAuthorityMaster);
     document.getElementById('btnAuthorityUpdate').addEventListener('click', assignAuthority);
     document.getElementById('btnAuthorityRevoke').addEventListener('click', revokeAuthority);
     document.getElementById('authorityTypeSelect').addEventListener('change', toggleAuthoritySource);
@@ -169,12 +172,19 @@ async function revokeAuthority() {
     const username = document.getElementById('authorityUserSelect').value;
     const authorityId = document.getElementById('authorityIdSelect').value;
     const type = document.getElementById('authorityTypeSelect').value;
+    const reason = document.getElementById('authorityRevokeReason').value.trim();
+    if (!reason) {
+        showError(new Error('회수 사유를 입력해 주세요.'));
+        return;
+    }
     try {
         const payload = await requestJson(
             `/api/admin/users/${encodeURIComponent(username)}/authorities/`
-            + `${encodeURIComponent(authorityId)}?type=${encodeURIComponent(type)}`, {
-                method: 'DELETE'
+            + `${encodeURIComponent(authorityId)}`, {
+                method: 'DELETE',
+                body: {type, reason}
             });
+        document.getElementById('authorityRevokeReason').value = '';
         await Promise.all([loadAuthorityView(false), refreshContext()]);
         showResult('사용자 권한 회수 성공', payload);
     } catch (error) {
@@ -221,6 +231,7 @@ function renderAuthMaster(view) {
             user.effectiveAuthorityIds.includes(authority.id)).length;
         const row = document.createElement('tr');
         appendCell(row, authority.id);
+        appendCell(row, authority.systemId || 'INFO');
         appendCell(row, authority.name);
         appendCell(row, authority.active ? '활성' : '비활성');
         appendCell(row, `${userCount}명`);
@@ -228,6 +239,56 @@ function renderAuthMaster(view) {
         rows.appendChild(row);
     });
     document.getElementById('authorityVersion').textContent = `권한 버전 ${view.version}`;
+}
+
+/** 승인된 원본 추출 JSON을 읽어 배열 여부와 AI·AB·CY·MO 시스템별 건수를 실행 전에 표시한다. */
+async function previewAuthorityImport(event) {
+    authorityImportRows = null;
+    const summary = document.getElementById('authorityImportSummary');
+    const file = event.target.files[0];
+    if (!file) {
+        summary.textContent = '파일을 선택하면 형식과 시스템별 건수를 미리 확인합니다.';
+        return;
+    }
+    try {
+        const parsed = JSON.parse(await file.text());
+        if (!Array.isArray(parsed) || parsed.length === 0) {
+            throw new Error('비어 있지 않은 JSON 배열이어야 합니다.');
+        }
+        const counts = {AI: 0, AB: 0, CY: 0, MO: 0, other: 0};
+        parsed.forEach(row => {
+            const systemId = typeof row?.authId === 'string' ? row.authId.slice(0, 2) : '';
+            if (Object.hasOwn(counts, systemId)) {
+                counts[systemId] += 1;
+            } else {
+                counts.other += 1;
+            }
+        });
+        authorityImportRows = parsed;
+        summary.textContent = `총 ${parsed.length}건 · AI ${counts.AI} · AB ${counts.AB} · CY ${counts.CY} · MO ${counts.MO}`
+            + (counts.other ? ` · 허용 외 ${counts.other}` : '');
+    } catch (error) {
+        summary.textContent = `파일 오류: ${error.message}`;
+        showError(error);
+    }
+}
+
+/** 미리 읽은 원본 행 전체를 서버 검증에 전달하고 성공한 경우에만 권한 목록을 갱신한다. */
+async function importAuthorityMaster() {
+    if (!authorityImportRows) {
+        showError(new Error('먼저 승인된 원본 추출 JSON 파일을 선택해 주세요.'));
+        return;
+    }
+    try {
+        const payload = await requestJson('/api/admin/authorities/import', {
+            method: 'POST',
+            body: authorityImportRows
+        });
+        await Promise.all([loadAuthorityView(false), refreshContext()]);
+        showResult('원본 권한 마스터 이관 성공', payload);
+    } catch (error) {
+        showError(error);
+    }
 }
 
 /** 선택한 권한 마스터 행의 수정 가능 값을 입력 폼으로 복사한다. */

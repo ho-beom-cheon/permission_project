@@ -1,10 +1,12 @@
 package com.example.permissiondemo.web;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import com.example.permissiondemo.authorization.AdminService;
+import com.example.permissiondemo.authorization.AuthorityMasterImportService;
 import com.example.permissiondemo.authorization.AuthorizationCatalog;
 import com.example.permissiondemo.common.CommonCodeService;
 
@@ -38,10 +40,15 @@ public class AdminController {
 
     private final AdminService adminService;
     private final CommonCodeService commonCodeService;
+    private final AuthorityMasterImportService authorityMasterImportService;
 
-    public AdminController(AdminService adminService, CommonCodeService commonCodeService) {
+    public AdminController(
+            AdminService adminService,
+            CommonCodeService commonCodeService,
+            AuthorityMasterImportService authorityMasterImportService) {
         this.adminService = adminService;
         this.commonCodeService = commonCodeService;
+        this.authorityMasterImportService = authorityMasterImportService;
     }
 
     /** 전체 권한 마스터와 사용자별 유효 권한·변경 이력을 조회한다. */
@@ -64,6 +71,15 @@ public class AdminController {
                         authorityId, request.name(), request.active(),
                         request.systemId() == null ? "INFO" : request.systemId(),
                         request.classificationId(), request.description())));
+    }
+
+    /** 검증을 통과한 원본 권한 마스터 JSON 행을 한 번에 생성 또는 갱신한다. */
+    @PostMapping("/authorities/import")
+    @PreAuthorize("@programAuthorizationService.isAllowed(authentication, "
+            + "'SYSTEM_AUTH', 'AUTHORITY', 'AUTHORITY_UPDATE')")
+    public ApiResponse<AuthorityMasterImportService.ImportResult> importAuthorities(
+            @RequestBody List<AuthorityMasterImportService.SourceAuthorityRow> rows) {
+        return ApiResponse.ok(authorityMasterImportService.importRows(rows));
     }
 
     /** 사용자에게 직접 또는 위임 권한을 승인 상태로 부여한다. */
@@ -89,8 +105,8 @@ public class AdminController {
     public ApiResponse<AuthorizationCatalog.AuthorityAssignment> revokeAuthority(
             @PathVariable String username,
             @PathVariable String authorityId,
-            @RequestParam AuthorizationCatalog.AssignmentType type) {
-        return ApiResponse.ok(adminService.revokeAuthority(username, authorityId, type));
+            @Valid @RequestBody RevokeAuthorityRequest request) {
+        return ApiResponse.ok(adminService.revokeAuthority(username, authorityId, request.type(), request.reason()));
     }
 
     /** 전체 메뉴 속성과 권한별 직접 허용 매핑을 조회한다. */
@@ -207,6 +223,12 @@ public class AdminController {
             LocalDate validTo,
             @Pattern(regexp = "[A-Za-z0-9_]{1,50}")
             String delegatedBy) {
+    }
+
+    /** 개별 회수는 부여 유형과 필수 회수사유를 함께 받는다. */
+    public record RevokeAuthorityRequest(
+            @NotNull AuthorizationCatalog.AssignmentType type,
+            @NotBlank String reason) {
     }
 
     /** 권한 마스터 표시명과 사용 가능 여부를 저장하는 요청이다. */

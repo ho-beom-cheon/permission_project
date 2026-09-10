@@ -48,7 +48,8 @@ class AdminServiceTest {
         adminService.revokeAuthority(
                 "viewer",
                 AuthorizationCatalog.AUTH_CONTENT_MANAGER,
-                AuthorizationCatalog.AssignmentType.DIRECT);
+                AuthorizationCatalog.AssignmentType.DIRECT,
+                "회수 사유");
 
         assertThat(effectiveAuthorityService.findEffectiveAuthorityIds("viewer"))
                 .doesNotContain(AuthorizationCatalog.AUTH_CONTENT_MANAGER);

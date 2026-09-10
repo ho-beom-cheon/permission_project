@@ -10,24 +10,42 @@
 </head>
 <body>
 <header><div><small>ARISU WORKS</small><h1>권한 신청 및 심사</h1></div>
-    <nav aria-label="업무 이동"><a href="/portal.html">사용자 홈</a><a id="adminLink" href="/admin/authority" hidden>권한 관리</a><a href="/authority-revocations.html">사용자 일괄 회수</a></nav>
+    <nav aria-label="업무 이동"><a href="/portal.html">사용자 홈</a><a id="adminLink" href="/admin/authority" hidden>권한 관리</a><a href="/authority-revocations.html">사용자 일괄 회수</a><a href="/authority-history.html">권한 처리 이력</a></nav>
 </header>
 <main>
     <p id="identity">사용자 정보를 확인하고 있습니다.</p>
     <p id="feedback" role="status" aria-live="polite"></p>
     <section aria-labelledby="applyTitle">
         <h2 id="applyTitle">업무 권한 신청</h2>
-        <p>변경 신청은 승인 시 선택한 시스템의 기존 직접 권한을 회수하고 신청한 권한으로 교체합니다.</p>
+    <p>변경 신청은 새 권한 하나를 선택합니다. 승인 시 같은 시스템의 현재 유효한 직접 권한을 회수하고 선택한 권한을 부여합니다. SSO 인가 전환 후 신청은 신청 당시 SSO사업소·부서 범위에서 처리합니다.</p>
+        <p>새 신청의 승인 기간은 승인일 ~ 9999-12-31로 정해집니다.</p>
         <form id="requestForm">
+            <fieldset><legend>신청자 정보</legend>
+                <div class="form-grid">
+                    <label>직급<input id="applicantRankCode" maxlength="50" required></label>
+                    <label>부서전화<input id="applicantTelephone" inputmode="numeric" pattern="[0-9]{1,15}" maxlength="15" required></label>
+                    <label>휴대전화 <span>(선택)</span><input id="applicantMobile" inputmode="numeric" pattern="010[0-9]{8}" maxlength="11"></label>
+                    <label>이메일<input id="applicantEmail" type="email" maxlength="150" required></label>
+                </div>
+                <label>담당업무<textarea id="applicantJobDescription" maxlength="1000" rows="3" required></textarea></label>
+            </fieldset>
+            <fieldset><legend>담당지역</legend>
+                <p>선택하지 않으면 현재 사업소의 전체 담당지역으로 신청합니다.</p>
+                <div id="applicantRegions" class="choices">담당지역을 조회하고 있습니다.</div>
+            </fieldset>
             <div class="form-grid">
                 <label>신청 구분<select id="requestKind" required><option value="GRANT">권한 추가</option><option value="CHANGE">기존 권한 변경</option></select></label>
                 <label>시스템<select id="requestSystem" required></select></label>
-                <label>시작일<input id="validFrom" type="date" required></label>
-                <label>종료일<input id="validTo" type="date" required></label>
             </div>
             <fieldset><legend>신청 권한</legend><div id="authorityChoices" class="choices"></div></fieldset>
+            <fieldset><legend>이번 신청 선택</legend><p>AI 권한에 연결된 AB 권한과 대상 부서의 CY 권한은 원본 규칙에 따라 자동으로 선택됩니다. 자동 선택된 권한도 제출 전에 해제할 수 있습니다.</p><div id="selectedAuthorityChoices" class="choices"></div></fieldset>
             <label>신청 사유<textarea id="requestReason" maxlength="1000" rows="3" required></textarea></label>
-            <button id="submitRequest" type="submit" disabled>신청 제출</button>
+            <fieldset id="requestTermsPanel" hidden><legend>시스템별 이용약관 확인</legend>
+                <p id="requestTermsSummary"></p>
+                <div id="requestTermsItems" class="choices"></div>
+                <p id="requestTermsUnconfigured"></p>
+            </fieldset>
+            <button id="submitRequest" type="submit" disabled>약관 확인</button>
         </form>
     </section>
     <section aria-labelledby="historyTitle">
@@ -54,6 +72,25 @@
             <label>상위 분류<select id="classificationParent"><option value="">최상위</option></select></label>
             <label class="check"><input id="classificationActive" type="checkbox" checked>사용</label>
         </div><button id="saveClassification" type="submit" disabled>분류 저장</button></form>
+        <h3>원본 권한 분류 일괄 이관</h3>
+        <p>승인된 원본 조회 결과를 JSON 파일로 선택하면 분류와 권한 연결 건수를 먼저 확인할 수 있습니다. 파일 선택만으로는 저장되지 않습니다.</p>
+        <div class="form-grid">
+            <label>분류 이관 JSON<input id="classificationImportFile" type="file" accept="application/json,.json"></label>
+        </div>
+        <pre id="classificationImportPreview" aria-live="polite">선택한 파일이 없습니다.</pre>
+        <button id="importClassifications" type="button" hidden disabled>검증한 분류와 권한 연결 이관</button>
+    </section>
+    <section id="termsAdminSection" aria-labelledby="termsAdminTitle" hidden>
+        <h2 id="termsAdminTitle">권한 신청 이용약관 이관</h2>
+        <p>승인된 원본 조회 결과를 JSON 파일로 선택하면 시스템별 약관과 필수 동의 건수를 확인할 수 있습니다. 파일 선택만으로는 저장되지 않습니다.</p>
+        <div class="form-grid"><label>약관 이관 JSON<input id="termsImportFile" type="file" accept="application/json,.json"></label></div>
+        <pre id="termsImportPreview" aria-live="polite">선택한 파일이 없습니다.</pre>
+        <button id="importTerms" type="button" hidden disabled>검증한 이용약관 이관</button>
+        <h3>기존 사용자 약관 동의 이력 이관</h3>
+        <p>승인된 동의 이력 JSON 파일을 선택하면 사용자·동의 여부·완전 중복 건수를 먼저 확인할 수 있습니다. 파일 선택만으로는 저장되지 않습니다.</p>
+        <div class="form-grid"><label>동의 이력 JSON<input id="agreementImportFile" type="file" accept="application/json,.json"></label></div>
+        <pre id="agreementImportPreview" aria-live="polite">선택한 파일이 없습니다.</pre>
+        <button id="importAgreements" type="button" hidden disabled>검증한 약관 동의 이력 이관</button>
     </section>
 </main>
 </body>

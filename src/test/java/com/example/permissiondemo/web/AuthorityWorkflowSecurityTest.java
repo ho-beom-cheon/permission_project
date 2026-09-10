@@ -51,6 +51,11 @@ class AuthorityWorkflowSecurityTest {
         mvc.perform(post("/api/admin/authority-requests/review").with(user("admin")).with(csrf())
                 .contentType(MediaType.APPLICATION_JSON).content(review)).andExpect(status().isOk());
         mvc.perform(post("/api/content/save").with(user("viewer")).with(csrf())).andExpect(status().isOk());
+        // 승인 직후 같은 권한을 다시 신청하면 HTTP 409이며 신청 건수는 증가하지 않는다.
+        mvc.perform(post("/api/me/authority-requests").with(user("viewer")).with(csrf())
+                .contentType(MediaType.APPLICATION_JSON).content(request)).andExpect(status().isConflict());
+        mvc.perform(get("/api/me/authority-requests").with(user("viewer")))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.totalElements").value(1));
         var notices=mvc.perform(get("/api/me/notices").with(user("viewer")))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.data.totalElements").value(1)).andReturn();
         long noticeId=json.readTree(notices.getResponse().getContentAsByteArray()).path("data").path("content").get(0).path("id").asLong();

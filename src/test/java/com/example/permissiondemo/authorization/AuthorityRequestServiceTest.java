@@ -16,9 +16,13 @@ import com.example.permissiondemo.authorization.AuthorityRequestService.Decision
 import com.example.permissiondemo.authorization.AuthorityRequestService.RequestKind;
 import com.example.permissiondemo.authorization.AuthorityRequestService.RequestStatus;
 import com.example.permissiondemo.common.PageQuery;
+import com.example.permissiondemo.common.InboxService;
 import com.example.permissiondemo.web.ApiException;
+import com.example.permissiondemo.web.ErrorCode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 /** 원본 데이터 없이 가상 사용자로 신청·변경 승인·동시 변경·일괄 처리 경계를 검증한다. */
 class AuthorityRequestServiceTest {
@@ -76,7 +80,7 @@ class AuthorityRequestServiceTest {
     void oneInvalidRequestPreventsEveryApprovalInBatch() {
         var first = requests.submit("viewer", RequestKind.GRANT, Set.of("AUTH_CONTENT_MANAGER"), from, to, "신규 업무");
         var second = requests.submit("expired", RequestKind.GRANT, Set.of("AUTH_CONTENT_MANAGER"), from, to, "신규 업무");
-        catalog.saveAssignment("expired", "AUTH_SYSTEM_ADMIN", AssignmentType.DIRECT, from, to, null);
+        catalog.saveAssignment("expired", "AUTH_CONTENT_MANAGER", AssignmentType.DIRECT, from, to, null);
         assertThatThrownBy(() -> requests.review("admin", List.of(first.id(), second.id()), Decision.APPROVE, ""))
                 .isInstanceOf(ApiException.class);
         assertThat(effective.findEffectiveAuthorityIds("viewer")).doesNotContain("AUTH_CONTENT_MANAGER");
@@ -86,10 +90,10 @@ class AuthorityRequestServiceTest {
     @Test
     void staleChangeRequestCannotOverwriteNewlyGrantedAuthority() {
         var request = requests.submit("viewer", RequestKind.CHANGE, Set.of("AUTH_CONTENT_MANAGER"), from, to, "업무 변경");
-        catalog.saveAssignment("viewer", "AUTH_SYSTEM_ADMIN", AssignmentType.DIRECT, from, to, null);
+        catalog.saveAssignment("viewer", "AUTH_CONTENT_MANAGER", AssignmentType.DIRECT, from, to, null);
         assertThatThrownBy(() -> requests.review("admin", List.of(request.id()), Decision.APPROVE, ""))
                 .isInstanceOf(ApiException.class);
-        assertThat(effective.findEffectiveAuthorityIds("viewer")).contains("AUTH_SYSTEM_ADMIN", "AUTH_VIEWER");
+        assertThat(effective.findEffectiveAuthorityIds("viewer")).contains("AUTH_CONTENT_MANAGER", "AUTH_VIEWER");
     }
 
     @Test
@@ -100,8 +104,76 @@ class AuthorityRequestServiceTest {
                 .isInstanceOf(IllegalArgumentException.class);
         requests.submit("viewer", RequestKind.GRANT, Set.of("AUTH_CONTENT_MANAGER"), from, to, "신규 업무");
         assertThatThrownBy(() -> requests.submit("viewer", RequestKind.CHANGE,
-                Set.of("AUTH_SYSTEM_ADMIN"), from, to, "중복 신청"))
+                Set.of("AUTH_CONTENT_MANAGER"), from, to, "중복 신청"))
                 .isInstanceOf(ApiException.class);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"2026-09-02,2026-09-10", "2026-09-01,2026-09-02", "2026-09-02,2026-09-02"})
+    void currentDirectGrantCannotBeRequestedAgainIncludingPeriodBoundaries(String start, String end) {
+        catalog.saveAssignment("viewer", "AUTH_CONTENT_MANAGER", AssignmentType.DIRECT,
+                LocalDate.parse(start), LocalDate.parse(end), null);
+        assertThatThrownBy(() -> requests.submit("viewer", RequestKind.GRANT,
+                Set.of("AUTH_CONTENT_MANAGER"), from, to, "중복 신청"))
+                .isInstanceOfSatisfying(ApiException.class,
+                        error -> assertThat(error.errorCode()).isEqualTo(ErrorCode.CONFLICT));
+    }
+
+    @ParameterizedTest
+    @CsvSource({"2026-08-01,2026-09-01", "2026-09-03,2026-10-01"})
+    void expiredOrFutureDirectGrantDoesNotBlockRequest(String start, String end) {
+        catalog.saveAssignment("viewer", "AUTH_CONTENT_MANAGER", AssignmentType.DIRECT,
+                LocalDate.parse(start), LocalDate.parse(end), null);
+        assertThat(requests.submit("viewer", RequestKind.GRANT, Set.of("AUTH_CONTENT_MANAGER"),
+                from, to, "권한 신청").status()).isEqualTo(RequestStatus.PENDING);
+    }
+
+    @Test
+    void latestRevocationAllowsRequestDespiteOlderEffectiveApproval() {
+        catalog.revokeAssignment("viewer", "AUTH_VIEWER", AssignmentType.DIRECT);
+        assertThat(requests.submit("viewer", RequestKind.GRANT, Set.of("AUTH_VIEWER"),
+                from, to, "회수 후 재신청").status()).isEqualTo(RequestStatus.PENDING);
+    }
+
+    @Test
+    void delegatedAndPreviousOrganizationHoldingsDoNotBlockDirectRequest() {
+        assertThat(requests.submit("delegate", RequestKind.GRANT, Set.of("AUTH_CONTENT_MANAGER"),
+                from, to, "직접 권한 신청").status()).isEqualTo(RequestStatus.PENDING);
+        assertThat(requests.submit("moved", RequestKind.GRANT, Set.of("AUTH_SYSTEM_ADMIN"),
+                from, to, "현재 조직 권한 신청").status()).isEqualTo(RequestStatus.PENDING);
+    }
+
+    @Test
+    void changeRequiresOneNotCurrentlyHeldTarget() {
+        assertThatThrownBy(() -> requests.submit("viewer", RequestKind.CHANGE,
+                Set.of("AUTH_VIEWER", "AUTH_CONTENT_MANAGER"), from, to, "업무 권한 변경"))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> requests.submit("viewer", RequestKind.CHANGE,
+                Set.of("AUTH_VIEWER"), from, to, "현재 보유 권한 변경"))
+                .isInstanceOf(ApiException.class);
+    }
+
+    @Test
+    void oneAlreadyHeldAuthorityRejectsWholeRequestWithoutStateChanges() {
+        Clock clock = Clock.fixed(Instant.parse("2026-09-02T00:00:00Z"), ZoneOffset.UTC);
+        var audit = new AuditEventService();
+        var inbox = new InboxService(catalog, null, audit, clock);
+        requests = new AuthorityRequestService(catalog, audit, clock, inbox);
+        Object beforeRequests = requests.snapshotState();
+        Object beforeCatalog = catalog.snapshotState();
+        Object beforeAudit = audit.snapshotState();
+        Object beforeInbox = inbox.snapshotState();
+
+        assertThatThrownBy(() -> requests.submit("viewer", RequestKind.GRANT,
+                Set.of("AUTH_CONTENT_MANAGER", "AUTH_VIEWER"), from, to, "일괄 권한 신청"))
+                .isInstanceOf(ApiException.class);
+
+        assertThat(requests.snapshotState()).isEqualTo(beforeRequests);
+        assertThat(catalog.snapshotState()).isEqualTo(beforeCatalog);
+        assertThat(audit.snapshotState()).isEqualTo(beforeAudit);
+        assertThat(inbox.snapshotState()).isEqualTo(beforeInbox);
+        assertThat(requests.submit("viewer", RequestKind.GRANT, Set.of("AUTH_CONTENT_MANAGER"),
+                from, to, "미보유 권한만 신청").id()).isEqualTo(1L);
     }
 
     @Test

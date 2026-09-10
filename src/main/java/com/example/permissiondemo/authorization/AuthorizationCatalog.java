@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -358,6 +359,33 @@ public class AuthorizationCatalog implements com.example.permissiondemo.storage.
         return saved;
     }
 
+    /**
+     * 전체 검증을 마친 원본 분류와 권한 연결을 한 번에 반영한다.
+     * 원본의 미사용 분류 관계를 그대로 옮길 수 있도록 단건 저장 정책은 적용하지 않는다.
+     */
+    synchronized void applyClassificationImport(
+            List<AuthorityClassification> importedClassifications,
+            Map<String, String> importedAuthorityLinks) {
+        boolean changed = false;
+        for (AuthorityClassification classification : importedClassifications) {
+            AuthorityClassification previous = classifications.put(classification.id(), classification);
+            changed |= !classification.equals(previous);
+        }
+        for (Map.Entry<String, String> link : importedAuthorityLinks.entrySet()) {
+            AuthorityDefinition previous = authorities.get(link.getKey());
+            AuthorityDefinition linked = new AuthorityDefinition(
+                    previous.id(), previous.name(), previous.active(), previous.systemId(),
+                    link.getValue(), previous.description());
+            if (!linked.equals(previous)) {
+                authorities.put(link.getKey(), linked);
+                changed = true;
+            }
+        }
+        if (changed) {
+            authorityVersion.incrementAndGet();
+        }
+    }
+
     /** 사용 중인 연결을 남기지 않도록 자식과 연결 권한이 없는 분류만 삭제한다. */
     public synchronized void deleteClassification(String classificationId) {
         String id = normalizeId(classificationId, "classificationId");
@@ -484,6 +512,16 @@ public class AuthorizationCatalog implements com.example.permissiondemo.storage.
             String username,
             String authorityId,
             AssignmentType type) {
+        AuthorityAssignment latest = latestAssignment(username, authorityId, type);
+        return revokeAssignment(username, authorityId, type, latest.validTo());
+    }
+
+    /** 개별 회수 처리일을 종료일로 명시하여 최신 상태를 REVOKED로 추가한다. */
+    public synchronized AuthorityAssignment revokeAssignment(
+            String username,
+            String authorityId,
+            AssignmentType type,
+            LocalDate revokedOn) {
         UserProfile user = findUser(username)
                 .orElseThrow(() -> new ApiException(ErrorCode.RESOURCE_NOT_FOUND, username));
         String normalizedAuthorityId = normalizeId(authorityId, "authorityId");
@@ -497,7 +535,8 @@ public class AuthorizationCatalog implements com.example.permissiondemo.storage.
                 .filter(item -> item.type() == type)
                 .max(Comparator.comparingLong(AuthorityAssignment::sequence))
                 .orElseThrow(() -> new ApiException(ErrorCode.RESOURCE_NOT_FOUND, normalizedAuthorityId));
-        if (latest.status() == AssignmentStatus.REVOKED) {
+        if (latest.status() == AssignmentStatus.REVOKED
+                || (type == AssignmentType.DIRECT && latest.status() != AssignmentStatus.APPROVED)) {
             throw new ApiException(ErrorCode.CONFLICT, normalizedAuthorityId);
         }
         AuthorityAssignment revoked = new AuthorityAssignment(
@@ -507,12 +546,119 @@ public class AuthorizationCatalog implements com.example.permissiondemo.storage.
                 latest.type(),
                 AssignmentStatus.REVOKED,
                 latest.validFrom(),
-                latest.validTo(),
+                Objects.requireNonNull(revokedOn, "revokedOn"),
                 latest.delegatedBy(),
                 latest.sequence() + 1);
         assignments.add(revoked);
         authorityVersion.incrementAndGet();
         return revoked;
+    }
+
+    private AuthorityAssignment latestAssignment(String username, String authorityId, AssignmentType type) {
+        UserProfile user = findUser(username)
+                .orElseThrow(() -> new ApiException(ErrorCode.RESOURCE_NOT_FOUND, username));
+        String normalizedAuthorityId = normalizeId(authorityId, "authorityId");
+        return assignments.stream()
+                .filter(item -> item.username().equals(username))
+                .filter(item -> item.organizationId().equals(user.organizationId()))
+                .filter(item -> item.authorityId().equals(normalizedAuthorityId))
+                .filter(item -> item.type() == type)
+                .max(Comparator.comparingLong(AuthorityAssignment::sequence))
+                .orElseThrow(() -> new ApiException(ErrorCode.RESOURCE_NOT_FOUND, normalizedAuthorityId));
+    }
+
+    /** 신규 신청은 현재 조직의 직접 이력에 기록하여 과거 승인이 다시 효력을 얻지 않게 한다. */
+    public synchronized AuthorityAssignment createPendingAssignment(String username, String organizationId,
+            String authorityId, LocalDate today, LocalDate end) {
+        UserProfile user = findUser(username).orElseThrow(() -> new ApiException(ErrorCode.RESOURCE_NOT_FOUND, username));
+        if (!user.organizationId().equals(organizationId)) throw new ApiException(ErrorCode.CONFLICT, username);
+        AuthorityAssignment latest = latestDirectAssignment(username, organizationId, authorityId);
+        if (latest != null && (latest.status() == AssignmentStatus.PENDING || latest.isEffectiveOn(today))) {
+            throw new ApiException(ErrorCode.CONFLICT, authorityId);
+        }
+        return appendDirectState(username, organizationId, authorityId, AssignmentStatus.PENDING, today, end);
+    }
+
+    /** 요청이 저장한 원래 조직·신청 이력만 승인 또는 반려한다. 반려 시 현재 조직으로 옮겨 쓰지 않는다. */
+    public synchronized AuthorityAssignment processPendingAssignment(AuthorityAssignment expected,
+            AssignmentStatus status, LocalDate from, LocalDate to) {
+        if (status != AssignmentStatus.APPROVED && status != AssignmentStatus.REJECTED) {
+            throw new IllegalArgumentException("승인 또는 반려 상태만 처리할 수 있습니다.");
+        }
+        if (expected.type() != AssignmentType.DIRECT || expected.status() != AssignmentStatus.PENDING
+                || !expected.equals(latestDirectAssignment(expected.username(), expected.organizationId(), expected.authorityId()))) {
+            throw new ApiException(ErrorCode.CONFLICT, expected.authorityId());
+        }
+        return appendDirectState(expected.username(), expected.organizationId(), expected.authorityId(), status, from, to);
+    }
+
+    /** 원본 변경승인의 회수는 현재 유효한 직접 권한의 시작일을 유지하고 종료일을 처리일로 기록한다. */
+    public synchronized AuthorityAssignment revokeForChange(AuthorityAssignment expected, LocalDate today) {
+        if (expected.type() != AssignmentType.DIRECT || !expected.isEffectiveOn(today)
+                || !expected.equals(latestDirectAssignment(expected.username(), expected.organizationId(), expected.authorityId()))
+                || (expected.username().equals("admin") && expected.authorityId().equals(AUTH_SYSTEM_ADMIN))) {
+            throw new ApiException(ErrorCode.CONFLICT, expected.authorityId());
+        }
+        return appendDirectState(expected.username(), expected.organizationId(), expected.authorityId(),
+                AssignmentStatus.REVOKED, expected.validFrom(), today);
+    }
+
+    /** 관리자 직접 부여가 진행 중인 신규 신청을 덮어쓰지 않게 한다. */
+    public synchronized AuthorityAssignment saveAdminAssignment(String username, String authorityId, AssignmentType type,
+            LocalDate from, LocalDate to, String delegatedBy) {
+        var user = findUser(username).orElseThrow(() -> new ApiException(ErrorCode.RESOURCE_NOT_FOUND, username));
+        AuthorityAssignment latest = latestDirectAssignment(username, user.organizationId(), authorityId);
+        if (type == AssignmentType.DIRECT && latest != null && latest.status() == AssignmentStatus.PENDING) {
+            throw new ApiException(ErrorCode.CONFLICT, authorityId);
+        }
+        return saveAssignment(username, authorityId, type, from, to, delegatedBy);
+    }
+
+    /** 명시 SSO 범위를 검증한 호출부가 신규 직접 이력을 기록한다. 범위별 최신 판정은 SSO 서비스가 담당한다. */
+    public synchronized AuthorityAssignment createScopedAssignment(String username, String organizationId, String authorityId,
+            AssignmentStatus status, LocalDate from, LocalDate to) {
+        if (status != AssignmentStatus.PENDING && status != AssignmentStatus.APPROVED) {
+            throw new IllegalArgumentException("신규 직접 이력은 신청 또는 승인 상태여야 합니다.");
+        }
+        if (findUser(username).isEmpty() || organizationId == null || organizationId.isBlank()
+                || !authorities.containsKey(authorityId)) {
+            throw new ApiException(ErrorCode.RESOURCE_NOT_FOUND, authorityId);
+        }
+        return appendDirectState(username, organizationId, authorityId, status, from, to);
+    }
+
+    /** SSO 범위의 최신 여부를 호출부가 검증한 실제 원본 행을 처리한다. 다른 SSO 범위의 최신 행을 덮어쓰지 않는다. */
+    public synchronized AuthorityAssignment processScopedAssignment(AuthorityAssignment expected, AssignmentStatus status,
+            LocalDate from, LocalDate to) {
+        boolean allowed = expected != null && expected.type() == AssignmentType.DIRECT
+                && ((expected.status() == AssignmentStatus.PENDING
+                        && (status == AssignmentStatus.APPROVED || status == AssignmentStatus.REJECTED))
+                    || (expected.status() == AssignmentStatus.APPROVED && status == AssignmentStatus.REVOKED));
+        if (!allowed || !assignments.contains(expected)
+                || (status == AssignmentStatus.REVOKED && expected.username().equals("admin")
+                        && expected.authorityId().equals(AUTH_SYSTEM_ADMIN))) {
+            throw new ApiException(ErrorCode.CONFLICT, "처리할 직접 권한 이력을 확인해 주세요.");
+        }
+        return appendDirectState(expected.username(), expected.organizationId(), expected.authorityId(), status, from, to);
+    }
+
+    /** 명시 SSO 범위·연결 변경 시 인가 캐시와 회수 미리보기의 버전을 함께 갱신한다. */
+    public synchronized void touchAuthorityVersion() { authorityVersion.incrementAndGet(); }
+
+    private AuthorityAssignment latestDirectAssignment(String username, String organizationId, String authorityId) {
+        return assignments.stream().filter(a -> a.username().equals(username) && a.organizationId().equals(organizationId)
+                && a.authorityId().equals(authorityId) && a.type() == AssignmentType.DIRECT)
+                .max(Comparator.comparingLong(AuthorityAssignment::sequence)).orElse(null);
+    }
+
+    private AuthorityAssignment appendDirectState(String username, String organizationId, String authorityId,
+            AssignmentStatus status, LocalDate from, LocalDate to) {
+        validatePeriod(from, to);
+        AuthorityAssignment saved = new AuthorityAssignment(username, organizationId, authorityId, AssignmentType.DIRECT,
+                status, from, to, null, findNextSequence(username, organizationId, authorityId, AssignmentType.DIRECT));
+        assignments.add(saved);
+        authorityVersion.incrementAndGet();
+        return saved;
     }
 
     /** 메뉴 한 건을 신규 등록하거나 수정하고 상위 메뉴 순환 참조를 차단한다. */
@@ -739,6 +885,7 @@ public class AuthorizationCatalog implements com.example.permissiondemo.storage.
     public enum AssignmentStatus {
         PENDING,
         APPROVED,
+        REJECTED,
         REVOKED
     }
 

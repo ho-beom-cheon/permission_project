@@ -1,0 +1,10 @@
+<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>권한 위임 | ARISU Works</title><link rel="icon" href="data:,"><link rel="stylesheet" href="/authority-requests.css">
+<script type="module" src="/authority-delegation.js"></script></head>
+<body><header><div><small>ARISU WORKS</small><h1>권한 위임</h1></div><nav><a href="/portal.html">사용자 홈</a><a href="/authority-requests.html">권한 신청</a><a href="/authority-history.html">권한 처리 이력</a></nav></header>
+<main><p id="feedback" role="status" aria-live="polite">현재 위임을 확인하고 있습니다.</p>
+<section><h2>현재 위임</h2><div class="table-wrap"><table><thead><tr><th>권한</th><th>수임자</th><th>기간</th><th>사유</th><th>작업</th></tr></thead><tbody id="rows"></tbody></table></div></section>
+<section><h2>새 위임</h2><p>현재 직접 승인된 권한 한 건만 위임할 수 있습니다. 위임 기간은 오늘부터 9999-12-31까지이며, 취소하면 위임 기록이 삭제됩니다.</p>
+<form id="form"><div class="form-grid"><label>위임 권한<select id="authority" required></select></label><label>수임자<select id="recipient" required></select></label></div>
+<label>위임 사유<textarea id="reason" maxlength="1000" rows="3" required></textarea></label><button id="save" type="submit">권한 위임</button></form></section>
+</main></body></html>

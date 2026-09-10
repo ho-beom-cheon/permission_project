@@ -1,6 +1,8 @@
 package com.example.permissiondemo.authorization;
 
 import java.time.LocalDate;
+import java.time.Clock;
+import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -26,6 +28,15 @@ public class AdminService {
     private final AuthorizationCatalog catalog;
     private final EffectiveAuthorityService effectiveAuthorityService;
     private final AuditEventService auditEventService;
+    private AuthorityHistoryService history;
+    private SsoAuthorityScopeService scopes;
+    private Clock clock = Clock.systemDefaultZone();
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public void setSsoScopes(SsoAuthorityScopeService scopes, Clock clock) { this.scopes = scopes; this.clock = clock; }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public void setHistory(AuthorityHistoryService history) { this.history = history; }
 
     public AdminService(
             AuthorizationCatalog catalog,
@@ -87,9 +98,25 @@ public class AdminService {
         }
         LocalDate resolvedFrom = validFrom == null ? DEFAULT_FROM : validFrom;
         LocalDate resolvedTo = validTo == null ? DEFAULT_TO : validTo;
+        boolean scoped = scopes != null && scopes.isEnabled(username);
+        if (type == AuthorizationCatalog.AssignmentType.DELEGATED && scopes != null
+                && (scoped || delegatedBy != null && scopes.isEnabled(delegatedBy))) {
+            throw new ApiException(ErrorCode.CONFLICT, "SSO 인가 사용자의 위임은 지원하지 않습니다.");
+        }
         String source = validateSource(target, authority.id(), type, delegatedBy);
-        AuthorizationCatalog.AuthorityAssignment saved = catalog.saveAssignment(
-                target.username(), authority.id(), type, resolvedFrom, resolvedTo, source);
+        AuthorizationCatalog.AuthorityAssignment saved;
+        if (scoped) {
+            var scope = scopes.requireCurrentScope(username);
+            LocalDate today = LocalDate.now(clock);
+            if (scopes.latest(username, scope, null).stream().anyMatch(a -> a.authorityId().equals(authority.id())
+                    && (a.status() == AuthorizationCatalog.AssignmentStatus.PENDING || a.isEffectiveOn(today)))) {
+                throw new ApiException(ErrorCode.CONFLICT, "현재 SSO소속에서 신청 중이거나 유효한 승인 권한입니다.");
+            }
+            saved = catalog.createScopedAssignment(username, target.organizationId(), authority.id(),
+                    AuthorizationCatalog.AssignmentStatus.APPROVED, resolvedFrom, resolvedTo);
+            scopes.record(saved, scope, Instant.now(clock));
+        } else saved = catalog.saveAdminAssignment(target.username(), authority.id(), type, resolvedFrom, resolvedTo, source);
+        if (history != null) history.recordAssignment(saved, AuthorityRequestService.RequestKind.GRANT, null, null, null);
         auditEventService.record(
                 "AUTHORITY_ASSIGNED",
                 "USER_AUTHORITY",
@@ -105,9 +132,26 @@ public class AdminService {
     public AuthorizationCatalog.AuthorityAssignment revokeAuthority(
             String username,
             String authorityId,
-            AuthorizationCatalog.AssignmentType type) {
-        AuthorizationCatalog.AuthorityAssignment revoked =
-                catalog.revokeAssignment(username, authorityId, type);
+            AuthorizationCatalog.AssignmentType type,
+            String reason) {
+        if (reason == null || reason.isBlank()) {
+            throw new IllegalArgumentException("회수사유를 입력해 주세요.");
+        }
+        LocalDate revokedOn = LocalDate.now(clock);
+        AuthorizationCatalog.AuthorityAssignment revoked;
+        if (scopes != null && scopes.isEnabled(username)) {
+            if (type != AuthorizationCatalog.AssignmentType.DIRECT) {
+                throw new ApiException(ErrorCode.CONFLICT, "SSO 인가 사용자의 직접 권한을 선택해 주세요.");
+            }
+            var scope = scopes.requireCurrentScope(username);
+            var latest = scopes.latest(username, scope, null).stream().filter(a -> a.authorityId().equals(authorityId))
+                    .findFirst().orElseThrow(() -> new ApiException(ErrorCode.RESOURCE_NOT_FOUND, authorityId));
+            scopes.requireLatest(latest, scope);
+            revoked = catalog.processScopedAssignment(latest, AuthorizationCatalog.AssignmentStatus.REVOKED,
+                    latest.validFrom(), revokedOn);
+            scopes.record(revoked, scope, Instant.now(clock));
+        } else revoked = catalog.revokeAssignment(username, authorityId, type, revokedOn);
+        if (history != null) history.recordAssignment(revoked, null, null, null, reason);
         auditEventService.record(
                 "AUTHORITY_REVOKED",
                 "USER_AUTHORITY",

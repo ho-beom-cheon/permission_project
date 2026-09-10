@@ -8,6 +8,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import com.example.permissiondemo.web.ApiException;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -23,10 +26,23 @@ public class EffectiveAuthorityService {
 
     private final AuthorizationCatalog catalog;
     private final Clock clock;
+    private final ObjectProvider<SsoAuthorityScopeService> scopes;
+    private ObjectProvider<AuthorityDelegationService> delegations;
 
     public EffectiveAuthorityService(AuthorizationCatalog catalog, Clock clock) {
+        this(catalog, clock, null);
+    }
+
+    @Autowired
+    public EffectiveAuthorityService(AuthorizationCatalog catalog, Clock clock, ObjectProvider<SsoAuthorityScopeService> scopes) {
         this.catalog = catalog;
         this.clock = clock;
+        this.scopes = scopes;
+    }
+
+    @Autowired
+    public void configureDelegations(ObjectProvider<AuthorityDelegationService> delegations) {
+        this.delegations = delegations;
     }
 
     /**
@@ -50,6 +66,14 @@ public class EffectiveAuthorityService {
         if (userProfile.isEmpty() || !userProfile.get().active()) {
             return Set.of();
         }
+        SsoAuthorityScopeService sso = ssoScopes();
+        if (sso != null && sso.isEnabled(username)) {
+            Set<String> result = scopedDirect(username, sso, today).stream()
+                    .map(AuthorizationCatalog.AuthorityAssignment::authorityId)
+                    .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
+            addSourceDelegations(username, result);
+            return Set.copyOf(result);
+        }
         String organizationId = userProfile.get().organizationId();
         Set<String> effectiveIds = new LinkedHashSet<>();
         // 회수·승인 대기·기간 만료·비활성 권한은 합집합을 만들기 전에 제거한다.
@@ -64,6 +88,8 @@ public class EffectiveAuthorityService {
                 .filter(assignment -> assignment.type() == AuthorizationCatalog.AssignmentType.DIRECT)
                 .map(AuthorizationCatalog.AuthorityAssignment::authorityId)
                 .forEach(effectiveIds::add);
+
+        addSourceDelegations(username, effectiveIds);
 
         // 위임 권한은 위임자가 같은 조직에서 해당 권한을 직접 보유하고 있어야 한다.
         effectiveAssignments.stream()
@@ -87,6 +113,11 @@ public class EffectiveAuthorityService {
      */
     public boolean hasDirectAuthority(String username, String authorityId) {
         LocalDate today = LocalDate.now(clock);
+        SsoAuthorityScopeService sso = ssoScopes();
+        if (sso != null && sso.isEnabled(username)) {
+            return catalog.findUser(username).filter(AuthorizationCatalog.UserProfile::active).isPresent()
+                    && scopedDirect(username, sso, today).stream().anyMatch(item -> item.authorityId().equals(authorityId));
+        }
         return catalog.findUser(username)
                 .filter(AuthorizationCatalog.UserProfile::active)
                 .map(AuthorizationCatalog.UserProfile::organizationId)
@@ -107,6 +138,8 @@ public class EffectiveAuthorityService {
         if (delegatedBy == null || delegatedBy.isBlank()) {
             return false;
         }
+        SsoAuthorityScopeService sso = ssoScopes();
+        if (sso != null && sso.isEnabled(delegatedBy)) return false;
         boolean sameCurrentOrganization = catalog.findUser(delegatedBy)
                 .filter(AuthorizationCatalog.UserProfile::active)
                 .map(AuthorizationCatalog.UserProfile::organizationId)
@@ -147,6 +180,26 @@ public class EffectiveAuthorityService {
         return catalog.findAuthority(authorityId)
                 .map(AuthorizationCatalog.AuthorityDefinition::active)
                 .orElse(false);
+    }
+
+    private SsoAuthorityScopeService ssoScopes() { return scopes == null ? null : scopes.getIfAvailable(); }
+
+    private void addSourceDelegations(String username, Set<String> authorityIds) {
+        AuthorityDelegationService service = delegations == null ? null : delegations.getIfAvailable();
+        if (service == null) return;
+        service.activeForRecipient(username).stream().map(AuthorityDelegationService.Delegation::authorityId)
+                .filter(this::isActiveAuthority).forEach(authorityIds::add);
+    }
+
+    private List<AuthorizationCatalog.AuthorityAssignment> scopedDirect(String username, SsoAuthorityScopeService sso, LocalDate today) {
+        try {
+            return sso.currentScope(username).map(scope -> sso.latest(username, scope, null)).orElse(List.of()).stream()
+                    .filter(item -> item.type() == AuthorizationCatalog.AssignmentType.DIRECT)
+                    .filter(item -> item.isEffectiveOn(today) && isActiveAuthority(item.authorityId())).toList();
+        } catch (ApiException exception) {
+            // 확정할 수 없는 최신 이력은 기존 로컬 권한으로 대체하지 않는다.
+            return List.of();
+        }
     }
 
     /** Spring Security 인증 객체가 실제 로그인 사용자 상태인지 확인한다. */
