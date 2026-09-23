@@ -77,7 +77,7 @@ class PermissionApiSecurityTest {
 
         mockMvc.perform(get("/login.html"))
                 .andExpect(status().isOk())
-                .andExpect(content().string(containsString("ARISU Works")))
+                .andExpect(content().string(containsString("Access Studio")))
                 .andExpect(content().string(containsString("loginForm")));
 
         mockMvc.perform(get("/login-polish.css"))
@@ -101,7 +101,7 @@ class PermissionApiSecurityTest {
         mockMvc.perform(get("/portal.html")
                         .with(user("viewer").roles("AUTHENTICATED_USER")))
                 .andExpect(status().isOk())
-                .andExpect(content().string(containsString("ARISU Works")))
+                .andExpect(content().string(containsString("Access Studio")))
                 .andExpect(content().string(containsString("portal-main")));
     }
 
@@ -362,6 +362,55 @@ class PermissionApiSecurityTest {
                 .andExpect(jsonPath("$.error.traceId").isNotEmpty())
                 .andExpect(jsonPath("$.error.fieldErrors[*].field", hasItem("code")))
                 .andExpect(jsonPath("$.error.fieldErrors[*].field", hasItem("name")));
+    }
+
+    /** 프로젝트 관리 API가 기능 권한, CSRF와 참여자 저장 계약을 모두 적용하는지 확인한다. */
+    @Test
+    void projectManagementIsProtectedAndWritableByAdmin() throws Exception {
+        mockMvc.perform(get("/api/admin/project-view")
+                        .with(user("viewer").roles("AUTHENTICATED_USER")))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(get("/api/admin/project-view")
+                        .with(user("admin").roles("AUTHENTICATED_USER")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.projects[*].project.id",
+                        hasItem("PRJ_ACCESS_RENEWAL")));
+
+        String projectJson = """
+                {
+                  "name":"업무 포털 고도화",
+                  "description":"프로젝트 관리 통합 테스트",
+                  "status":"PLANNED",
+                  "startDate":"2026-09-01",
+                  "endDate":"2027-01-31",
+                  "ownerUsername":"admin",
+                  "active":true,
+                  "version":0
+                }
+                """;
+
+        mockMvc.perform(post("/api/admin/projects/PRJ_PORTAL_TEST")
+                        .with(user("admin").roles("AUTHENTICATED_USER"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(projectJson))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(post("/api/admin/projects/PRJ_PORTAL_TEST")
+                        .with(user("admin").roles("AUTHENTICATED_USER"))
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(projectJson))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.version").value(1));
+
+        mockMvc.perform(put("/api/admin/projects/PRJ_PORTAL_TEST/members/viewer")
+                        .with(user("admin").roles("AUTHENTICATED_USER"))
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"role\":\"VIEWER\",\"active\":true}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.username").value("viewer"));
     }
 
     /** 감사 이력이 무제한 배열이 아니라 page/size가 포함된 제한된 페이지 계약인지 확인한다. */

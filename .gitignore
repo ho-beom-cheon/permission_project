@@ -1,5 +1,7 @@
 target/
 /out/
+/output/
+.playwright-cli/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
@@ -38,3 +40,7 @@ build/
 
 ### Mac OS ###
 .DS_Store
+
+### Local database secrets and data ###
+.env.oracle.local
+docker/oracle/secrets/

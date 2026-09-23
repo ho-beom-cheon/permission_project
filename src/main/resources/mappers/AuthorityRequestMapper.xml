@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.permissiondemo.authorization.workflow.AuthorityRequestMapper">
+
+    <resultMap id="authorityRequestResultMap"
+               type="com.example.permissiondemo.authorization.workflow.AuthorityRequestModels$AuthorityRequest">
+        <constructor>
+            <idArg column="REQUEST_ID" javaType="_long"/>
+            <arg column="REQUESTER_USERNAME" javaType="java.lang.String"/>
+            <arg column="TARGET_USERNAME" javaType="java.lang.String"/>
+            <arg column="ORG_ID" javaType="java.lang.String"/>
+            <arg column="AUTHORITY_ID" javaType="java.lang.String"/>
+            <arg column="ASSIGNMENT_TYPE"
+                 javaType="com.example.permissiondemo.authorization.AuthorizationCatalog$AssignmentType"/>
+            <arg column="REQUEST_STATUS"
+                 javaType="com.example.permissiondemo.authorization.workflow.AuthorityRequestModels$RequestStatus"/>
+            <arg column="VALID_FROM" javaType="java.time.LocalDate"/>
+            <arg column="VALID_TO" javaType="java.time.LocalDate"/>
+            <arg column="DELEGATED_BY" javaType="java.lang.String"/>
+            <arg column="REQUEST_REASON" javaType="java.lang.String"/>
+            <arg column="DECISION_REASON" javaType="java.lang.String"/>
+            <arg column="VERSION_NO" javaType="_long"/>
+            <arg column="REQUESTED_AT" javaType="java.time.LocalDateTime"/>
+            <arg column="DECIDED_AT" javaType="java.time.LocalDateTime"/>
+            <arg column="DECIDED_BY" javaType="java.lang.String"/>
+        </constructor>
+    </resultMap>
+
+    <sql id="requestColumns">
+        REQUEST_ID, REQUESTER_USERNAME, TARGET_USERNAME, ORG_ID, AUTHORITY_ID,
+        ASSIGNMENT_TYPE, REQUEST_STATUS, VALID_FROM, VALID_TO, DELEGATED_BY,
+        REQUEST_REASON, NVL(DECISION_REASON, '') AS DECISION_REASON, VERSION_NO,
+        REQUESTED_AT, DECIDED_AT, DECIDED_BY
+    </sql>
+
+    <select id="nextId" resultType="long">
+        SELECT SQ_PM_AUTH_REQUEST.NEXTVAL FROM DUAL
+    </select>
+
+    <insert id="insert">
+        INSERT INTO PM_AUTH_REQUEST (
+            REQUEST_ID, REQUESTER_USERNAME, TARGET_USERNAME, ORG_ID, AUTHORITY_ID,
+            ASSIGNMENT_TYPE, REQUEST_STATUS, VALID_FROM, VALID_TO, DELEGATED_BY,
+            REQUEST_REASON, DECISION_REASON, VERSION_NO, REQUESTED_AT, DECIDED_AT, DECIDED_BY
+        ) VALUES (
+            #{request.id}, #{request.requesterUsername}, #{request.targetUsername},
+            #{request.organizationId}, #{request.authorityId}, #{request.assignmentType},
+            #{request.status}, #{request.validFrom}, #{request.validTo},
+            #{request.delegatedBy,jdbcType=VARCHAR},
+            #{request.requestReason}, #{request.decisionReason,jdbcType=VARCHAR},
+            #{request.version}, #{request.requestedAt},
+            #{request.decidedAt,jdbcType=TIMESTAMP},
+            #{request.decidedBy,jdbcType=VARCHAR}
+        )
+    </insert>
+
+    <select id="selectById" resultMap="authorityRequestResultMap">
+        SELECT <include refid="requestColumns"/>
+        FROM PM_AUTH_REQUEST
+        WHERE REQUEST_ID = #{requestId}
+    </select>
+
+    <select id="selectAll" resultMap="authorityRequestResultMap">
+        SELECT <include refid="requestColumns"/>
+        FROM PM_AUTH_REQUEST
+        ORDER BY REQUESTED_AT DESC, REQUEST_ID DESC
+    </select>
+
+    <update id="updateDecision">
+        UPDATE PM_AUTH_REQUEST
+        SET REQUEST_STATUS = #{request.status},
+            DECISION_REASON = #{request.decisionReason},
+            VERSION_NO = VERSION_NO + 1,
+            DECIDED_AT = #{request.decidedAt},
+            DECIDED_BY = #{request.decidedBy}
+        WHERE REQUEST_ID = #{request.id}
+          AND VERSION_NO = #{expectedVersion}
+          AND REQUEST_STATUS = 'REQUESTED'
+    </update>
+</mapper>

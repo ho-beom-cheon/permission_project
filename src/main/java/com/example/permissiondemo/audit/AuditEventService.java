@@ -2,44 +2,44 @@ package com.example.permissiondemo.audit;
 
 import java.time.Clock;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentLinkedDeque;
-import java.util.concurrent.atomic.AtomicLong;
 
 import com.example.permissiondemo.common.PageQuery;
 import com.example.permissiondemo.common.PageResult;
+import com.example.permissiondemo.common.SortDirection;
 import com.example.permissiondemo.security.CurrentUserContext;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
- * 로그인, 접근 거부와 관리 데이터 변경을 최근 순으로 보관하는 인메모리 감사 서비스다.
- * 데모에서는 최대 500건을 유지하며 실제 적용 시 append-only 저장소나 로그 수집기로 교체한다.
+ * 로그인, 접근 거부와 관리 데이터 변경을 프로필별 감사 저장소에 남기는 서비스다.
+ * demo 프로필은 최근 이벤트를 메모리에, oracle 프로필은 append-only 테이블에 보관한다.
  */
 @Service
 public class AuditEventService {
 
-    private static final int MAX_EVENTS = 500;
-
-    private final ConcurrentLinkedDeque<AuditEvent> events = new ConcurrentLinkedDeque<>();
-    private final AtomicLong sequence = new AtomicLong();
     private final CurrentUserContext userContext;
     private final Clock clock;
+    private final AuditEventRepository repository;
 
     /** 단위 테스트에서 웹 요청 컨텍스트 없이 사용할 수 있는 시스템 행위자용 생성자다. */
     public AuditEventService() {
-        this(null, Clock.systemUTC());
+        this(null, Clock.systemUTC(), new InMemoryAuditEventRepository());
     }
 
     /** 실제 요청에서는 현재 사용자와 공통 Clock을 주입받아 감사 주체와 발생 시각을 기록한다. */
     @Autowired
-    public AuditEventService(CurrentUserContext userContext, Clock clock) {
+    public AuditEventService(
+            CurrentUserContext userContext,
+            Clock clock,
+            AuditEventRepository repository) {
         this.userContext = userContext;
         this.clock = clock;
+        this.repository = repository;
     }
 
     /**
@@ -81,7 +81,7 @@ public class AuditEventService {
             String result,
             Map<String, ?> details) {
         AuditEvent event = new AuditEvent(
-                sequence.incrementAndGet(),
+                repository.nextId(),
                 eventType,
                 actor,
                 organizationId,
@@ -92,16 +92,53 @@ public class AuditEventService {
                 traceId,
                 Instant.now(clock),
                 Map.copyOf(details));
-        // 최신 이벤트를 앞에 넣고 오래된 이벤트부터 제거해 메모리 사용량을 제한한다.
-        events.addFirst(event);
-        while (events.size() > MAX_EVENTS) {
-            events.pollLast();
-        }
+        repository.append(event);
     }
 
     /** 최신 이벤트가 먼저 오도록 저장된 순서를 유지한 채 요청 페이지를 반환한다. */
     public PageResult<AuditEvent> findPage(PageQuery query) {
-        return PageResult.of(new ArrayList<>(events), query);
+        return repository.findPage(query);
+    }
+
+    /** 감사 화면의 검색·필터·정렬 조건을 저장소에 전달한다. */
+    public PageResult<AuditEvent> findPage(
+            String keyword,
+            String eventType,
+            String actor,
+            String targetType,
+            String result,
+            LocalDate from,
+            LocalDate to,
+            AuditSort sort,
+            SortDirection direction,
+            PageQuery page) {
+        Instant fromInstant = from == null ? null : from.atStartOfDay().toInstant(ZoneOffset.UTC);
+        Instant toExclusive = to == null ? null : to.plusDays(1).atStartOfDay().toInstant(ZoneOffset.UTC);
+        return repository.findPage(new AuditQuery(
+                normalize(keyword), normalize(eventType), normalize(actor), normalize(targetType),
+                normalize(result), fromInstant, toExclusive,
+                sort == null ? AuditSort.OCCURRED_AT : sort,
+                direction == null ? SortDirection.DESC : direction,
+                page));
+    }
+
+    private String normalize(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
+    }
+
+    public enum AuditSort { OCCURRED_AT, ACTOR, EVENT_TYPE, TARGET, RESULT }
+
+    public record AuditQuery(
+            String keyword,
+            String eventType,
+            String actor,
+            String targetType,
+            String result,
+            Instant from,
+            Instant toExclusive,
+            AuditSort sort,
+            SortDirection direction,
+            PageQuery page) {
     }
 
     /** 한 건의 감사 이벤트와 추적·변경 상세 정보다. details에는 민감한 원문을 넣지 않는다. */

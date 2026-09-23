@@ -1,0 +1,275 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.permissiondemo.project.ProjectMapper">
+
+    <resultMap id="projectResultMap"
+               type="com.example.permissiondemo.project.ProjectModels$Project">
+        <constructor>
+            <idArg column="PROJECT_ID" javaType="java.lang.String"/>
+            <arg column="PROJECT_NAME" javaType="java.lang.String"/>
+            <arg column="DESCRIPTION" javaType="java.lang.String"/>
+            <arg column="PROJECT_STATUS"
+                 javaType="com.example.permissiondemo.project.ProjectModels$ProjectStatus"/>
+            <arg column="START_DATE" javaType="java.time.LocalDate"/>
+            <arg column="END_DATE" javaType="java.time.LocalDate"/>
+            <arg column="OWNER_USERNAME" javaType="java.lang.String"/>
+            <arg column="ACTIVE_FLAG" javaType="_boolean"/>
+            <arg column="VERSION_NO" javaType="_long"/>
+        </constructor>
+    </resultMap>
+
+    <resultMap id="projectMemberResultMap"
+               type="com.example.permissiondemo.project.ProjectModels$ProjectMember">
+        <constructor>
+            <idArg column="PROJECT_ID" javaType="java.lang.String"/>
+            <idArg column="USERNAME" javaType="java.lang.String"/>
+            <arg column="PROJECT_ROLE"
+                 javaType="com.example.permissiondemo.project.ProjectModels$ProjectRole"/>
+            <arg column="ACTIVE_FLAG" javaType="_boolean"/>
+        </constructor>
+    </resultMap>
+
+    <resultMap id="projectStatusHistoryResultMap"
+               type="com.example.permissiondemo.project.ProjectModels$ProjectStatusHistory">
+        <constructor>
+            <idArg column="PROJECT_ID" javaType="java.lang.String"/>
+            <idArg column="SEQUENCE_NO" javaType="_long"/>
+            <arg column="FROM_STATUS"
+                 javaType="com.example.permissiondemo.project.ProjectModels$ProjectStatus"/>
+            <arg column="TO_STATUS"
+                 javaType="com.example.permissiondemo.project.ProjectModels$ProjectStatus"/>
+            <arg column="CHANGED_BY" javaType="java.lang.String"/>
+            <arg column="CHANGE_REASON" javaType="java.lang.String"/>
+            <arg column="CHANGED_AT" javaType="java.time.Instant"/>
+        </constructor>
+    </resultMap>
+
+    <sql id="projectColumns">
+        PROJECT_ID,
+        PROJECT_NAME,
+        NVL(DESCRIPTION, '') AS DESCRIPTION,
+        PROJECT_STATUS,
+        START_DATE,
+        END_DATE,
+        OWNER_USERNAME,
+        CASE ACTIVE_YN WHEN 'Y' THEN 1 ELSE 0 END AS ACTIVE_FLAG,
+        VERSION_NO
+    </sql>
+
+    <sql id="projectSearchWhere">
+        <where>
+            <if test="keywordPattern != null and keywordPattern != ''">
+                AND (
+                    LOWER(PROJECT_ID) LIKE #{keywordPattern} ESCAPE '\'
+                    OR LOWER(PROJECT_NAME) LIKE #{keywordPattern} ESCAPE '\'
+                    OR LOWER(NVL(DESCRIPTION, '')) LIKE #{keywordPattern} ESCAPE '\'
+                )
+            </if>
+            <if test="criteria.statuses != null and !criteria.statuses.isEmpty()">
+                AND PROJECT_STATUS IN
+                <foreach collection="criteria.statuses" item="status" open="(" separator="," close=")">
+                    #{status}
+                </foreach>
+            </if>
+            <if test="criteria.ownerUsername != null and criteria.ownerUsername != ''">
+                AND LOWER(OWNER_USERNAME) = LOWER(#{criteria.ownerUsername})
+            </if>
+            <if test="criteria.active != null">
+                AND ACTIVE_YN =
+                <choose>
+                    <when test="criteria.active">'Y'</when>
+                    <otherwise>'N'</otherwise>
+                </choose>
+            </if>
+        </where>
+    </sql>
+
+    <select id="selectAll" resultMap="projectResultMap">
+        SELECT
+        <include refid="projectColumns"/>
+        FROM PM_PROJECT
+        ORDER BY PROJECT_ID
+    </select>
+
+    <select id="search" resultMap="projectResultMap">
+        SELECT
+        <include refid="projectColumns"/>
+        FROM PM_PROJECT
+        <include refid="projectSearchWhere"/>
+        ORDER BY
+        <choose>
+            <when test="criteria.sort.toString() == 'NAME'">PROJECT_NAME</when>
+            <when test="criteria.sort.toString() == 'STATUS'">
+                CASE PROJECT_STATUS
+                    WHEN 'PLANNED' THEN 0
+                    WHEN 'ACTIVE' THEN 1
+                    WHEN 'ON_HOLD' THEN 2
+                    WHEN 'COMPLETED' THEN 3
+                END
+            </when>
+            <when test="criteria.sort.toString() == 'START_DATE'">START_DATE</when>
+            <when test="criteria.sort.toString() == 'END_DATE'">END_DATE</when>
+            <when test="criteria.sort.toString() == 'OWNER'">OWNER_USERNAME</when>
+            <otherwise>PROJECT_ID</otherwise>
+        </choose>
+        <choose>
+            <when test="criteria.direction.toString() == 'DESC'">DESC</when>
+            <otherwise>ASC</otherwise>
+        </choose>
+        <if test="criteria.sort.toString() != 'ID'">, PROJECT_ID ASC</if>
+        OFFSET #{offset} ROWS FETCH NEXT #{size} ROWS ONLY
+    </select>
+
+    <select id="count" resultType="_long">
+        SELECT COUNT(*)
+        FROM PM_PROJECT
+        <include refid="projectSearchWhere"/>
+    </select>
+
+    <select id="selectById" resultMap="projectResultMap">
+        SELECT
+        <include refid="projectColumns"/>
+        FROM PM_PROJECT
+        WHERE PROJECT_ID = #{projectId}
+    </select>
+
+    <insert id="insertProject">
+        INSERT INTO PM_PROJECT (
+            PROJECT_ID,
+            PROJECT_NAME,
+            DESCRIPTION,
+            PROJECT_STATUS,
+            START_DATE,
+            END_DATE,
+            OWNER_USERNAME,
+            ACTIVE_YN,
+            VERSION_NO,
+            CREATED_BY,
+            UPDATED_BY
+        ) VALUES (
+            #{project.id},
+            #{project.name},
+            #{project.description},
+            #{project.status},
+            #{project.startDate},
+            #{project.endDate},
+            #{project.ownerUsername},
+            <choose><when test="project.active">'Y'</when><otherwise>'N'</otherwise></choose>,
+            1,
+            #{project.ownerUsername},
+            #{project.ownerUsername}
+        )
+    </insert>
+
+    <update id="updateProject">
+        UPDATE PM_PROJECT
+        SET PROJECT_NAME = #{project.name},
+            DESCRIPTION = #{project.description},
+            PROJECT_STATUS = #{project.status},
+            START_DATE = #{project.startDate},
+            END_DATE = #{project.endDate},
+            OWNER_USERNAME = #{project.ownerUsername},
+            ACTIVE_YN = <choose><when test="project.active">'Y'</when><otherwise>'N'</otherwise></choose>,
+            VERSION_NO = VERSION_NO + 1,
+            UPDATED_AT = SYSTIMESTAMP,
+            UPDATED_BY = #{project.ownerUsername}
+        WHERE PROJECT_ID = #{project.id}
+          AND VERSION_NO = #{project.version}
+    </update>
+
+    <update id="demoteOtherOwners">
+        UPDATE PM_PROJECT_MEMBER
+        SET PROJECT_ROLE = 'MANAGER',
+            ACTIVE_YN = 'Y',
+            UPDATED_AT = SYSTIMESTAMP,
+            UPDATED_BY = #{ownerUsername}
+        WHERE PROJECT_ID = #{projectId}
+          AND USERNAME &lt;&gt; #{ownerUsername}
+          AND PROJECT_ROLE = 'OWNER'
+    </update>
+
+    <select id="selectMembers" resultMap="projectMemberResultMap">
+        SELECT PROJECT_ID,
+               USERNAME,
+               PROJECT_ROLE,
+               CASE ACTIVE_YN WHEN 'Y' THEN 1 ELSE 0 END AS ACTIVE_FLAG
+        FROM PM_PROJECT_MEMBER
+        WHERE PROJECT_ID = #{projectId}
+        ORDER BY USERNAME
+    </select>
+
+    <insert id="insertMember">
+        INSERT INTO PM_PROJECT_MEMBER (
+            PROJECT_ID,
+            USERNAME,
+            PROJECT_ROLE,
+            ACTIVE_YN,
+            CREATED_BY,
+            UPDATED_BY
+        ) VALUES (
+            #{member.projectId},
+            #{member.username},
+            #{member.role},
+            <choose><when test="member.active">'Y'</when><otherwise>'N'</otherwise></choose>,
+            #{member.username},
+            #{member.username}
+        )
+    </insert>
+
+    <update id="updateMember">
+        UPDATE PM_PROJECT_MEMBER
+        SET PROJECT_ROLE = #{member.role},
+            ACTIVE_YN = <choose><when test="member.active">'Y'</when><otherwise>'N'</otherwise></choose>,
+            UPDATED_AT = SYSTIMESTAMP,
+            UPDATED_BY = #{member.username}
+        WHERE PROJECT_ID = #{member.projectId}
+          AND USERNAME = #{member.username}
+    </update>
+
+    <delete id="deleteMember">
+        DELETE FROM PM_PROJECT_MEMBER
+        WHERE PROJECT_ID = #{projectId}
+          AND USERNAME = #{username}
+    </delete>
+
+    <select id="selectStatusHistory" resultMap="projectStatusHistoryResultMap">
+        SELECT PROJECT_ID,
+               SEQUENCE_NO,
+               FROM_STATUS,
+               TO_STATUS,
+               CHANGED_BY,
+               CHANGE_REASON,
+               CHANGED_AT
+        FROM PM_PROJECT_STATUS_HISTORY
+        WHERE PROJECT_ID = #{projectId}
+        ORDER BY SEQUENCE_NO DESC
+    </select>
+
+    <select id="selectNextStatusHistorySequence" resultType="_long">
+        SELECT NVL(MAX(SEQUENCE_NO), 0) + 1
+        FROM PM_PROJECT_STATUS_HISTORY
+        WHERE PROJECT_ID = #{projectId}
+    </select>
+
+    <insert id="insertStatusHistory">
+        INSERT INTO PM_PROJECT_STATUS_HISTORY (
+            PROJECT_ID,
+            SEQUENCE_NO,
+            FROM_STATUS,
+            TO_STATUS,
+            CHANGED_BY,
+            CHANGE_REASON,
+            CHANGED_AT
+        ) VALUES (
+            #{history.projectId},
+            #{history.sequence},
+            #{history.fromStatus,jdbcType=VARCHAR},
+            #{history.toStatus},
+            #{history.changedBy},
+            #{history.reason},
+            #{history.changedAt}
+        )
+    </insert>
+</mapper>

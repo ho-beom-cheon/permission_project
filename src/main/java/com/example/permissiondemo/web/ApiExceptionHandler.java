@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
@@ -90,6 +91,19 @@ public class ApiExceptionHandler {
         return ResponseEntity.badRequest().body(errorFactory.createMessage(
                 ErrorCode.INVALID_REQUEST,
                 "JSON 요청 형식 또는 날짜 값을 확인해 주세요.",
+                request,
+                List.of()));
+    }
+
+    /** enum 정렬값이나 쿼리 날짜를 해석할 수 없을 때도 표준 400 오류를 반환한다. */
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ApiResponse<Void>> handleTypeMismatch(
+            MethodArgumentTypeMismatchException exception,
+            HttpServletRequest request) {
+        String parameter = exception.getName() == null ? "요청 조건" : exception.getName();
+        return ResponseEntity.badRequest().body(errorFactory.createMessage(
+                ErrorCode.INVALID_REQUEST,
+                parameter + " 값이 올바르지 않습니다.",
                 request,
                 List.of()));
     }

@@ -1,0 +1,25 @@
+services:
+  oracle:
+    image: gvenzl/oracle-free:23.26.1-slim-faststart
+    container_name: permission-oracle
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:1521:1521"
+    environment:
+      ORACLE_PASSWORD: ${ORACLE_ADMIN_PASSWORD}
+      APP_USER: ${PM_DB_USERNAME:-PM_APP}
+      APP_USER_PASSWORD: ${PM_DB_PASSWORD}
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+    volumes:
+      - permission-oracle-data:/opt/oracle/oradata
+      - ./docker/oracle/init:/container-entrypoint-initdb.d:ro
+      - ./docker/oracle/sql:/opt/permission/sql:ro
+
+volumes:
+  permission-oracle-data:
+    name: permission-oracle-data

@@ -74,6 +74,29 @@ class ProgramAuthorizationServiceTest {
                 admin, "CONTENT_LIST", "CONTENT", "CONTENT_READ")).isTrue();
     }
 
+    /** 전용 관리 역할은 자기 업무 기능만 허용되고 다른 관리 영역으로 권한이 번지지 않는지 확인한다. */
+    @Test
+    void specializedManagersReceiveOnlyTheirProductAreaActions() {
+        Authentication codeManager = authentication("codeManager");
+
+        assertThat(service.findAllowedActions(codeManager, "SYSTEM_CODE", "COMMON_CODE"))
+                .extracting(ProgramAuthorizationService.ActionPermission::actionId)
+                .containsExactly(
+                        "COMMON_CODE_READ",
+                        "COMMON_CODE_SAVE",
+                        "COMMON_CODE_GROUP_SAVE",
+                        "COMMON_CODE_DEACTIVATE",
+                        "COMMON_CODE_DELETE",
+                        "COMMON_CODE_BULK_IMPORT");
+        assertThat(service.findAllowedActions(codeManager, "SYSTEM_PROJECT", "PROJECT"))
+                .isEmpty();
+        assertThat(service.findAllowedActions(
+                authentication("projectManager"), "SYSTEM_PROJECT", "PROJECT"))
+                .extracting(ProgramAuthorizationService.ActionPermission::actionId)
+                .contains("PROJECT_CREATE", "PROJECT_MEMBER_MANAGE", "PROJECT_OWNER_TRANSFER",
+                        "PROJECT_ARCHIVE");
+    }
+
     /** 업무 권한은 username 기반 원장에서 계산하며 프레임워크 역할은 로그인 여부만 표현한다. */
     private Authentication authentication(String username) {
         return new UsernamePasswordAuthenticationToken(

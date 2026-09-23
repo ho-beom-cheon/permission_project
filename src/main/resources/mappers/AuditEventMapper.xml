@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.permissiondemo.audit.AuditEventMapper">
+
+    <resultMap id="auditRowResultMap" type="com.example.permissiondemo.audit.AuditEventMapper$AuditRow">
+        <constructor>
+            <idArg column="AUDIT_ID" javaType="_long"/>
+            <arg column="EVENT_TYPE" javaType="java.lang.String"/>
+            <arg column="ACTOR" javaType="java.lang.String"/>
+            <arg column="ORG_ID" javaType="java.lang.String"/>
+            <arg column="TARGET_TYPE" javaType="java.lang.String"/>
+            <arg column="TARGET_ID" javaType="java.lang.String"/>
+            <arg column="RESULT_CODE" javaType="java.lang.String"/>
+            <arg column="CLIENT_IP" javaType="java.lang.String"/>
+            <arg column="TRACE_ID" javaType="java.lang.String"/>
+            <arg column="OCCURRED_AT" javaType="java.time.LocalDateTime"/>
+            <arg column="DETAILS_JSON" javaType="java.lang.String"/>
+        </constructor>
+    </resultMap>
+
+    <select id="nextId" resultType="long">
+        SELECT SQ_PM_AUDIT_EVENT.NEXTVAL FROM DUAL
+    </select>
+
+    <insert id="insert">
+        INSERT INTO PM_AUDIT_EVENT (
+            AUDIT_ID, EVENT_TYPE, ACTOR, ORG_ID, TARGET_TYPE, TARGET_ID,
+            RESULT_CODE, CLIENT_IP, TRACE_ID, OCCURRED_AT, DETAILS_JSON
+        ) VALUES (
+            #{event.id}, #{event.eventType}, #{event.actor},
+            #{event.organizationId,jdbcType=VARCHAR},
+            #{event.targetType}, #{event.targetId,jdbcType=VARCHAR}, #{event.result},
+            #{event.clientIp,jdbcType=VARCHAR}, #{event.traceId,jdbcType=VARCHAR},
+            #{event.occurredAt}, #{detailsJson,jdbcType=CLOB}
+        )
+    </insert>
+
+    <select id="countAll" resultType="long">
+        SELECT COUNT(*) FROM PM_AUDIT_EVENT
+    </select>
+
+    <select id="selectPage" resultMap="auditRowResultMap">
+        SELECT AUDIT_ID, EVENT_TYPE, ACTOR, ORG_ID, TARGET_TYPE, TARGET_ID,
+               RESULT_CODE, CLIENT_IP, TRACE_ID, OCCURRED_AT, DETAILS_JSON
+        FROM PM_AUDIT_EVENT
+        ORDER BY OCCURRED_AT DESC, AUDIT_ID DESC
+        OFFSET #{offset} ROWS FETCH NEXT #{size} ROWS ONLY
+    </select>
+
+    <sql id="filteredWhere">
+        <where>
+            <if test="query.keyword != null">
+                AND (LOWER(EVENT_TYPE) LIKE '%' || LOWER(#{query.keyword}) || '%'
+                  OR LOWER(ACTOR) LIKE '%' || LOWER(#{query.keyword}) || '%'
+                  OR LOWER(TARGET_TYPE) LIKE '%' || LOWER(#{query.keyword}) || '%'
+                  OR LOWER(TARGET_ID) LIKE '%' || LOWER(#{query.keyword}) || '%'
+                  OR LOWER(TRACE_ID) LIKE '%' || LOWER(#{query.keyword}) || '%')
+            </if>
+            <if test="query.eventType != null">AND LOWER(EVENT_TYPE) LIKE '%' || LOWER(#{query.eventType}) || '%'</if>
+            <if test="query.actor != null">AND LOWER(ACTOR) LIKE '%' || LOWER(#{query.actor}) || '%'</if>
+            <if test="query.targetType != null">AND LOWER(TARGET_TYPE) LIKE '%' || LOWER(#{query.targetType}) || '%'</if>
+            <if test="query.result != null">AND LOWER(RESULT_CODE) LIKE '%' || LOWER(#{query.result}) || '%'</if>
+            <if test="query.from != null">AND OCCURRED_AT &gt;= #{query.from}</if>
+            <if test="query.toExclusive != null">AND OCCURRED_AT &lt; #{query.toExclusive}</if>
+        </where>
+    </sql>
+
+    <select id="countFiltered" resultType="long">
+        SELECT COUNT(*) FROM PM_AUDIT_EVENT
+        <include refid="filteredWhere"/>
+    </select>
+
+    <select id="selectFilteredPage" resultMap="auditRowResultMap">
+        SELECT AUDIT_ID, EVENT_TYPE, ACTOR, ORG_ID, TARGET_TYPE, TARGET_ID,
+               RESULT_CODE, CLIENT_IP, TRACE_ID, OCCURRED_AT, DETAILS_JSON
+        FROM PM_AUDIT_EVENT
+        <include refid="filteredWhere"/>
+        ORDER BY
+        <choose>
+            <when test="query.sort.name() == 'ACTOR'">ACTOR</when>
+            <when test="query.sort.name() == 'EVENT_TYPE'">EVENT_TYPE</when>
+            <when test="query.sort.name() == 'TARGET'">TARGET_TYPE</when>
+            <when test="query.sort.name() == 'RESULT'">RESULT_CODE</when>
+            <otherwise>OCCURRED_AT</otherwise>
+        </choose>
+        <choose>
+            <when test="query.direction.name() == 'ASC'">ASC</when>
+            <otherwise>DESC</otherwise>
+        </choose>, AUDIT_ID DESC
+        OFFSET #{offset} ROWS FETCH NEXT #{size} ROWS ONLY
+    </select>
+</mapper>

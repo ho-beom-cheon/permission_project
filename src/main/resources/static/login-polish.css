@@ -33,6 +33,11 @@ body {
 .account-grid code { font-size: 13px; }
 .security-note { font-size: 12px; }
 .form-panel footer { font-size: 11px; }
+.brand-mark svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.login-guide,
+.form-options,
+.security-note,
+.form-panel footer { color: #556a7e; }
 
 @media (max-width: 520px) {
     .form-panel { padding: 30px 20px 18px; }
@@ -40,4 +45,50 @@ body {
     .login-card h2 { font-size: 31px; }
     .login-guide { margin-bottom: 26px; }
     .input-wrap { min-height: 58px; }
+}
+
+/* 운영 제품과 동일한 단정한 밀도와 평면적인 컨트롤을 로그인에도 적용한다. */
+body { background: #f3f4f6; }
+.login-shell { grid-template-columns: minmax(380px, .8fr) minmax(460px, 1.2fr); }
+.brand-panel {
+    padding: 38px clamp(36px, 5vw, 72px) 44px;
+    background: #1f3357;
+}
+.brand-panel::before,
+.brand-panel::after { display: none; }
+.brand { font-size: 19px; }
+.brand-mark { width: 34px; height: 34px; border-radius: 4px; box-shadow: none; }
+.brand-copy { margin: 46px 0 30px; }
+.brand-copy .eyebrow { margin-bottom: 12px; color: #81aef4; font-size: 10px; }
+.brand-copy h1 { font-size: clamp(34px, 3.6vw, 50px); }
+.brand-copy > p:last-child { margin-top: 20px; color: #b7c5d8; font-size: 14px; }
+.feature-list { gap: 8px; }
+.feature-list article { padding: 12px 14px; border-radius: 2px; background: rgba(255,255,255,.04); backdrop-filter: none; }
+.feature-icon { width: 32px; height: 32px; flex-basis: 32px; border-radius: 2px; }
+.feature-list strong { font-size: 13px; }
+.feature-list small { font-size: 11px; }
+.form-panel { background: #fff; }
+.login-card { width: min(100%, 400px); }
+.login-card h2 { font-size: 29px; }
+.login-guide { margin: 8px 0 24px; font-size: 13px; }
+.login-card > form > label { margin: 16px 0 6px; font-size: 12px; }
+.input-wrap { min-height: 46px; border-radius: 2px; }
+.input-wrap:focus-within { box-shadow: 0 0 0 2px rgba(19,117,230,.1); }
+.input-wrap > span { width: 48px; }
+.input-wrap input { padding-block: 12px; font-size: 13px; }
+.password-toggle { min-width: 46px; min-height: 30px; margin-right: 7px; border-radius: 2px; font-size: 11px; }
+.form-options { margin: 14px 0 18px; font-size: 11px; }
+.login-button { min-height: 46px; padding-inline: 16px; border-radius: 2px; background: #2268d8; box-shadow: none; font-size: 13px; }
+.demo-accounts { margin-top: 18px; border-radius: 2px; }
+.demo-accounts summary { min-height: 38px; padding: 10px 12px; font-size: 11px; }
+.account-grid,
+.account-grid code { font-size: 11px; }
+.security-note { margin-top: 14px; font-size: 10px; }
+.login-message { border-radius: 2px; }
+
+@media (max-width: 520px) {
+    .form-panel { padding: 24px 18px 16px; }
+    .mobile-brand { margin-bottom: 30px; }
+    .login-card h2 { font-size: 26px; }
+    .input-wrap { min-height: 46px; }
 }

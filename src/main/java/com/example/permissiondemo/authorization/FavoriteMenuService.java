@@ -5,11 +5,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Pattern;
 
 import com.example.permissiondemo.audit.AuditEventService;
+import com.example.permissiondemo.authorization.persistence.FavoriteMenuRepository;
 import com.example.permissiondemo.security.CurrentUserContext;
 import com.example.permissiondemo.web.ApiException;
 import com.example.permissiondemo.web.ErrorCode;
@@ -17,7 +16,7 @@ import com.example.permissiondemo.web.ErrorCode;
 import org.springframework.stereotype.Service;
 
 /**
- * 사용자별 관심 메뉴를 인메모리로 관리하는 데모 서비스다.
+ * 사용자별 관심 메뉴를 프로필별 저장소로 관리하는 서비스다.
  * 관심 메뉴는 편의 정보일 뿐이므로 등록과 조회 시 현재 메뉴 접근 권한을 항상 다시 검사한다.
  */
 @Service
@@ -25,21 +24,23 @@ public class FavoriteMenuService {
 
     private static final Pattern MENU_PATTERN = Pattern.compile("[A-Z0-9_]{1,40}");
 
-    private final ConcurrentMap<String, Set<String>> favorites = new ConcurrentHashMap<>();
     private final CurrentUserContext userContext;
     private final AuthorizationCatalog catalog;
     private final MenuAuthorizationService menuAuthorizationService;
     private final AuditEventService auditEventService;
+    private final FavoriteMenuRepository favoriteMenuRepository;
 
     public FavoriteMenuService(
             CurrentUserContext userContext,
             AuthorizationCatalog catalog,
             MenuAuthorizationService menuAuthorizationService,
-            AuditEventService auditEventService) {
+            AuditEventService auditEventService,
+            FavoriteMenuRepository favoriteMenuRepository) {
         this.userContext = userContext;
         this.catalog = catalog;
         this.menuAuthorizationService = menuAuthorizationService;
         this.auditEventService = auditEventService;
+        this.favoriteMenuRepository = favoriteMenuRepository;
     }
 
     /**
@@ -48,7 +49,7 @@ public class FavoriteMenuService {
      */
     public List<FavoriteMenu> findFavorites() {
         CurrentUserContext.CurrentUser user = userContext.require();
-        Set<String> stored = favorites.getOrDefault(user.username(), Set.of());
+        Set<String> stored = favoriteMenuRepository.findMenuIds(user.username());
         return catalog.menus().stream()
                 .filter(menu -> stored.contains(menu.id()))
                 .filter(this::isVisibleLeaf)
@@ -75,8 +76,7 @@ public class FavoriteMenuService {
                         userContext.authentication(), normalizedMenuId)) {
             throw new ApiException(ErrorCode.ACCESS_DENIED);
         }
-        favorites.computeIfAbsent(user.username(), ignored -> ConcurrentHashMap.newKeySet())
-                .add(normalizedMenuId);
+        favoriteMenuRepository.add(user.username(), normalizedMenuId);
         auditEventService.record(
                 "FAVORITE_MENU_ADDED",
                 "MENU",
@@ -90,10 +90,7 @@ public class FavoriteMenuService {
     public void removeFavorite(String menuId) {
         String normalizedMenuId = normalizeMenuId(menuId);
         CurrentUserContext.CurrentUser user = userContext.require();
-        Set<String> stored = favorites.get(user.username());
-        if (stored != null) {
-            stored.remove(normalizedMenuId);
-        }
+        favoriteMenuRepository.remove(user.username(), normalizedMenuId);
         auditEventService.record(
                 "FAVORITE_MENU_REMOVED",
                 "MENU",

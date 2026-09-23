@@ -38,8 +38,8 @@ class MenuAuthorizationServiceTest {
                 service.findAuthorizedMenuTree(authentication("viewer"));
 
         assertThat(menus).extracting(MenuAuthorizationService.MenuNode::id)
-                .containsExactly("HOME", "CONTENT");
-        assertThat(menus.get(1).children())
+                .containsExactly("HOME", "MY_AUTH_REQUEST", "CONTENT");
+        assertThat(menus.get(2).children())
                 .extracting(MenuAuthorizationService.MenuNode::id)
                 .containsExactly("CONTENT_LIST");
         assertThat(service.canAccessMenu(authentication("viewer"), "CONTENT")).isFalse();
@@ -53,15 +53,18 @@ class MenuAuthorizationServiceTest {
         List<MenuAuthorizationService.MenuNode> menus = service.findAuthorizedMenuTree(admin);
 
         assertThat(menus).extracting(MenuAuthorizationService.MenuNode::id)
-                .containsExactly("HOME", "CONTENT", "SYSTEM");
-        MenuAuthorizationService.MenuNode system = menus.get(2);
+                .containsExactly("HOME", "MY_AUTH_REQUEST", "CONTENT", "SYSTEM");
+        MenuAuthorizationService.MenuNode system = menus.get(3);
         assertThat(system.children()).extracting(MenuAuthorizationService.MenuNode::id)
                 .containsExactly(
                         "SYSTEM_AUTH_MASTER",
                         "SYSTEM_AUTH",
+                        "SYSTEM_AUTH_REQUEST",
                         "SYSTEM_MENU",
                         "SYSTEM_PROGRAM",
-                        "SYSTEM_CODE");
+                        "SYSTEM_PROJECT",
+                        "SYSTEM_CODE",
+                        "SYSTEM_AUDIT");
         assertThat(service.canAccessMenu(admin, "HIDDEN_MENU")).isTrue();
     }
 

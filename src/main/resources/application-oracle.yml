@@ -1,0 +1,25 @@
+# 로컬 Oracle 연동 프로필이다. 접속 비밀은 환경변수로만 주입한다.
+spring:
+  config:
+    activate:
+      on-profile: oracle
+  datasource:
+    driver-class-name: oracle.jdbc.OracleDriver
+    url: ${PM_DB_URL}
+    username: ${PM_DB_USERNAME}
+    password: ${PM_DB_PASSWORD}
+    hikari:
+      maximum-pool-size: ${PM_DB_POOL_MAX:10}
+      minimum-idle: ${PM_DB_POOL_MIN:2}
+      connection-timeout: ${PM_DB_CONN_TIMEOUT_MS:30000}
+      validation-timeout: 5000
+      connection-test-query: SELECT 1 FROM DUAL
+  sql:
+    init:
+      mode: never
+
+mybatis:
+  mapper-locations: classpath:/mappers/**/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+    default-enum-type-handler: org.apache.ibatis.type.EnumTypeHandler

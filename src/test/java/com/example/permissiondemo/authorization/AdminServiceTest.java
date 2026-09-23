@@ -133,4 +133,101 @@ class AdminServiceTest {
                         "AUTHORITY", "권한 관리", "관리 기능", false)))
                 .isInstanceOf(ApiException.class);
     }
+
+    /** 역할별 운영 담당자와 조직 마스터가 서로 연결된 충분한 초기 원장으로 제공되는지 확인한다. */
+    @Test
+    void operationalSeedDataCoversSpecializedManagementRoles() {
+        assertThat(catalog.organizations())
+                .extracting(AuthorizationCatalog.OrganizationDefinition::id)
+                .contains("HQ", "PLATFORM", "CONTENT", "AUDIT", "BRANCH_SEOUL", "BRANCH_BUSAN");
+        assertThat(effectiveAuthorityService.findEffectiveAuthorityIds("authorityManager"))
+                .containsExactly(AuthorizationCatalog.AUTH_AUTHORITY_MANAGER);
+        assertThat(effectiveAuthorityService.findEffectiveAuthorityIds("programManager"))
+                .containsExactly(AuthorizationCatalog.AUTH_PROGRAM_MANAGER);
+        assertThat(effectiveAuthorityService.findEffectiveAuthorityIds("projectManager"))
+                .containsExactly(AuthorizationCatalog.AUTH_PROJECT_MANAGER);
+        assertThat(effectiveAuthorityService.findEffectiveAuthorityIds("codeManager"))
+                .containsExactly(AuthorizationCatalog.AUTH_CODE_MANAGER);
+        assertThat(catalog.programActions()).hasSizeGreaterThan(25);
+    }
+
+    /** 관리 검색 조건이 권한·사용자·메뉴·프로그램·기능 원장에 일관되게 적용되는지 확인한다. */
+    @Test
+    void managementCatalogSupportsProductSearchFilters() {
+        assertThat(catalog.searchAuthorities("project", true))
+                .extracting(AuthorizationCatalog.AuthorityDefinition::id)
+                .containsExactly(AuthorizationCatalog.AUTH_PROJECT_MANAGER);
+        assertThat(catalog.searchUsers("manager", "HQ"))
+                .extracting(AuthorizationCatalog.UserProfile::username)
+                .contains("authorityManager", "projectManager")
+                .doesNotContain("programManager");
+        assertThat(catalog.searchMenus("공통코드", true, true))
+                .extracting(AuthorizationCatalog.MenuDefinition::id)
+                .containsExactly("SYSTEM_CODE");
+        assertThat(catalog.searchProgramActions("SYSTEM_CODE", "COMMON_CODE", "삭제", true))
+                .extracting(AuthorizationCatalog.ProgramActionDefinition::actionId)
+                .containsExactly("COMMON_CODE_DELETE");
+    }
+
+    /** 비활성·미사용 권한을 삭제하면 메뉴와 기능 매핑도 고아로 남지 않는지 확인한다. */
+    @Test
+    void deletingUnusedAuthorityCleansAllMappings() {
+        adminService.saveAuthority(new AuthorizationCatalog.AuthorityDefinition(
+                "AUTH_TEMP_OPERATOR", "임시 운영자", true));
+        adminService.setMenuGrant("AUTH_TEMP_OPERATOR", "CONTENT_LIST", true);
+        adminService.setActionGrant(
+                "AUTH_TEMP_OPERATOR",
+                new AuthorizationCatalog.ProgramActionKey(
+                        "CONTENT_LIST", "CONTENT", "CONTENT_READ"),
+                true);
+        adminService.saveAuthority(new AuthorizationCatalog.AuthorityDefinition(
+                "AUTH_TEMP_OPERATOR", "임시 운영자", false));
+
+        adminService.deleteAuthority("AUTH_TEMP_OPERATOR");
+
+        assertThat(catalog.findAuthority("AUTH_TEMP_OPERATOR")).isEmpty();
+        assertThat(catalog.allMenuGrants()).doesNotContainKey("AUTH_TEMP_OPERATOR");
+        assertThat(catalog.allActionGrants()).doesNotContainKey("AUTH_TEMP_OPERATOR");
+    }
+
+    /** 메뉴 삭제 시 해당 메뉴의 기능과 모든 권한 매핑까지 함께 정리되는지 확인한다. */
+    @Test
+    void deletingLeafMenuCleansProgramActionOrphans() {
+        adminService.saveMenu(new AuthorizationCatalog.MenuDefinition(
+                "TEMP_MENU", "CONTENT", "임시 메뉴", "#temp", 90,
+                true, false, false));
+        AuthorizationCatalog.ProgramActionDefinition action = adminService.saveAction(
+                new AuthorizationCatalog.ProgramActionDefinition(
+                        "TEMP_MENU", "CONTENT", "TEMP_READ", "임시 조회",
+                        "btnTempRead", 10, true));
+        adminService.setMenuGrant(AuthorizationCatalog.AUTH_VIEWER, "TEMP_MENU", true);
+        adminService.setActionGrant(AuthorizationCatalog.AUTH_VIEWER, action.key(), true);
+        adminService.saveMenu(new AuthorizationCatalog.MenuDefinition(
+                "TEMP_MENU", "CONTENT", "임시 메뉴", "#temp", 90,
+                false, false, false));
+
+        adminService.deleteMenu("TEMP_MENU");
+
+        assertThat(catalog.menus())
+                .extracting(AuthorizationCatalog.MenuDefinition::id)
+                .doesNotContain("TEMP_MENU");
+        assertThat(catalog.programActions())
+                .extracting(AuthorizationCatalog.ProgramActionDefinition::actionId)
+                .doesNotContain("TEMP_READ");
+        assertThat(catalog.actionGrantsFor(AuthorizationCatalog.AUTH_VIEWER))
+                .doesNotContain(action.key());
+    }
+
+    /** 마지막 직접 시스템 관리자 회수를 차단해 관리 기능 전체 잠금을 방지한다. */
+    @Test
+    void lastSystemAdministratorCannotBeRevoked() {
+        adminService.revokeAuthority(
+                "admin", AuthorizationCatalog.AUTH_SYSTEM_ADMIN,
+                AuthorizationCatalog.AssignmentType.DIRECT);
+
+        assertThatThrownBy(() -> adminService.revokeAuthority(
+                "backupAdmin", AuthorizationCatalog.AUTH_SYSTEM_ADMIN,
+                AuthorizationCatalog.AssignmentType.DIRECT))
+                .isInstanceOf(ApiException.class);
+    }
 }

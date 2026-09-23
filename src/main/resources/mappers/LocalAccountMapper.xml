@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.permissiondemo.security.LocalAccountMapper">
+
+    <resultMap id="accountResultMap"
+               type="com.example.permissiondemo.security.LocalAccountMapper$LocalAccountRow">
+        <constructor>
+            <arg column="USERNAME" javaType="java.lang.String"/>
+            <arg column="PASSWORD_HASH" javaType="java.lang.String"/>
+            <arg column="ENABLED" javaType="_boolean"/>
+        </constructor>
+    </resultMap>
+
+    <select id="selectByUsername" resultMap="accountResultMap">
+        SELECT account.USERNAME,
+               account.PASSWORD_HASH,
+               CASE
+                   WHEN account.ENABLED_YN = 'Y' AND profile.ENABLED_YN = 'Y' THEN 1
+                   ELSE 0
+               END AS ENABLED
+        FROM PM_LOCAL_ACCOUNT account
+        JOIN PM_USER_PROFILE profile ON profile.USERNAME = account.USERNAME
+        WHERE account.USERNAME = #{username}
+    </select>
+</mapper>

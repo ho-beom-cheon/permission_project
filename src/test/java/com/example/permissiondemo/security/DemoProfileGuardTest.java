@@ -13,7 +13,7 @@ class DemoProfileGuardTest {
 
     /** 활성 프로필이 없을 때의 기본 demo와 명시적 demo 단독 실행은 허용되는지 확인한다. */
     @Test
-    void defaultOrActiveDemoProfileIsAllowed() {
+    void defaultDemoAndLocalOracleProfileAreAllowed() {
         MockEnvironment defaultDemo = new MockEnvironment();
         defaultDemo.setDefaultProfiles("demo");
         assertThatCode(() -> new DemoProfileGuard(defaultDemo).validateProfiles())
@@ -22,6 +22,11 @@ class DemoProfileGuardTest {
         MockEnvironment activeDemo = new MockEnvironment();
         activeDemo.setActiveProfiles("demo");
         assertThatCode(() -> new DemoProfileGuard(activeDemo).validateProfiles())
+                .doesNotThrowAnyException();
+
+        MockEnvironment localOracle = new MockEnvironment();
+        localOracle.setActiveProfiles("oracle");
+        assertThatCode(() -> new DemoProfileGuard(localOracle).validateProfiles())
                 .doesNotThrowAnyException();
     }
 
@@ -34,7 +39,7 @@ class DemoProfileGuardTest {
 
             assertThatThrownBy(() -> new DemoProfileGuard(environment).validateProfiles())
                     .isInstanceOf(IllegalStateException.class)
-                    .hasMessageContaining("demo 프로필 하나");
+                    .hasMessageContaining("demo 또는 oracle");
         }
     }
 }

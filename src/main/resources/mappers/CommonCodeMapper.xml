@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.permissiondemo.common.CommonCodeMapper">
+
+    <resultMap id="groupRowMap" type="com.example.permissiondemo.common.CommonCodeMapper$GroupRow">
+        <constructor>
+            <arg column="GROUP_CODE" javaType="java.lang.String"/>
+            <arg column="GROUP_NAME" javaType="java.lang.String"/>
+            <arg column="DESCRIPTION" javaType="java.lang.String"/>
+            <arg column="SORT_ORDER" javaType="_int"/>
+            <arg column="ACTIVE" javaType="_boolean"/>
+            <arg column="SYSTEM_GROUP" javaType="_boolean"/>
+            <arg column="VERSION_NO" javaType="_long"/>
+        </constructor>
+    </resultMap>
+
+    <resultMap id="itemRowMap" type="com.example.permissiondemo.common.CommonCodeMapper$ItemRow">
+        <constructor>
+            <arg column="GROUP_CODE" javaType="java.lang.String"/>
+            <arg column="CODE" javaType="java.lang.String"/>
+            <arg column="CODE_NAME" javaType="java.lang.String"/>
+            <arg column="PARENT_CODE" javaType="java.lang.String"/>
+            <arg column="SORT_ORDER" javaType="_int"/>
+            <arg column="ACTIVE" javaType="_boolean"/>
+            <arg column="VALID_FROM" javaType="java.time.LocalDate"/>
+            <arg column="VALID_TO" javaType="java.time.LocalDate"/>
+        </constructor>
+    </resultMap>
+
+    <select id="selectGroups" resultMap="groupRowMap">
+        SELECT GROUP_CODE, GROUP_NAME, NVL(DESCRIPTION, '') AS DESCRIPTION, SORT_ORDER,
+               CASE WHEN ACTIVE_YN = 'Y' THEN 1 ELSE 0 END AS ACTIVE,
+               CASE WHEN SYSTEM_YN = 'Y' THEN 1 ELSE 0 END AS SYSTEM_GROUP,
+               VERSION_NO
+        FROM PM_CODE_GROUP
+        ORDER BY SORT_ORDER, GROUP_CODE
+    </select>
+
+    <select id="selectItems" resultMap="itemRowMap">
+        SELECT GROUP_CODE, CODE, CODE_NAME, PARENT_CODE, SORT_ORDER,
+               CASE WHEN ACTIVE_YN = 'Y' THEN 1 ELSE 0 END AS ACTIVE,
+               VALID_FROM, VALID_TO
+        FROM PM_COMMON_CODE
+        ORDER BY GROUP_CODE, SORT_ORDER, CODE
+    </select>
+
+    <update id="mergeGroup">
+        MERGE INTO PM_CODE_GROUP target
+        USING (SELECT #{row.groupCode} GROUP_CODE FROM DUAL) source
+        ON (target.GROUP_CODE = source.GROUP_CODE)
+        WHEN MATCHED THEN UPDATE SET
+            GROUP_NAME = #{row.groupName},
+            DESCRIPTION = #{row.description},
+            SORT_ORDER = #{row.sortOrder},
+            ACTIVE_YN = #{row.activeYn},
+            SYSTEM_YN = #{row.systemYn},
+            VERSION_NO = #{row.version},
+            UPDATED_AT = SYSTIMESTAMP,
+            UPDATED_BY = 'APPLICATION'
+        WHEN NOT MATCHED THEN INSERT (
+            GROUP_CODE, GROUP_NAME, DESCRIPTION, SORT_ORDER, ACTIVE_YN, SYSTEM_YN,
+            VERSION_NO, CREATED_BY, UPDATED_BY
+        ) VALUES (
+            #{row.groupCode}, #{row.groupName}, #{row.description}, #{row.sortOrder},
+            #{row.activeYn}, #{row.systemYn},
+            #{row.version}, 'APPLICATION', 'APPLICATION'
+        )
+    </update>
+
+    <update id="updateGroupVersion">
+        UPDATE PM_CODE_GROUP
+        SET VERSION_NO = #{version}, UPDATED_AT = SYSTIMESTAMP, UPDATED_BY = 'APPLICATION'
+        WHERE GROUP_CODE = #{groupCode}
+    </update>
+
+    <update id="mergeItem">
+        MERGE INTO PM_COMMON_CODE target
+        USING (SELECT #{row.groupCode} GROUP_CODE, #{row.code} CODE FROM DUAL) source
+        ON (target.GROUP_CODE = source.GROUP_CODE AND target.CODE = source.CODE)
+        WHEN MATCHED THEN UPDATE SET
+            CODE_NAME = #{row.codeName},
+            PARENT_CODE = #{row.parentCode,jdbcType=VARCHAR},
+            SORT_ORDER = #{row.sortOrder},
+            ACTIVE_YN = #{row.activeYn},
+            VALID_FROM = #{row.validFrom},
+            VALID_TO = #{row.validTo},
+            UPDATED_AT = SYSTIMESTAMP,
+            UPDATED_BY = 'APPLICATION'
+        WHEN NOT MATCHED THEN INSERT (
+            GROUP_CODE, CODE, CODE_NAME, PARENT_CODE, SORT_ORDER, ACTIVE_YN,
+            VALID_FROM, VALID_TO, CREATED_BY, UPDATED_BY
+        ) VALUES (
+            #{row.groupCode}, #{row.code}, #{row.codeName},
+            #{row.parentCode,jdbcType=VARCHAR},
+            #{row.sortOrder}, #{row.activeYn},
+            #{row.validFrom}, #{row.validTo}, 'APPLICATION', 'APPLICATION'
+        )
+    </update>
+
+    <delete id="deleteItem">
+        DELETE FROM PM_COMMON_CODE WHERE GROUP_CODE = #{groupCode} AND CODE = #{code}
+    </delete>
+
+    <delete id="deleteGroup">
+        DELETE FROM PM_CODE_GROUP WHERE GROUP_CODE = #{groupCode}
+    </delete>
+</mapper>

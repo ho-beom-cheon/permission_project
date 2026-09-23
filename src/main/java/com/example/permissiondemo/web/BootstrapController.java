@@ -1,6 +1,7 @@
 package com.example.permissiondemo.web;
 
 import java.util.List;
+import java.time.LocalDate;
 
 import com.example.permissiondemo.audit.AuditEventService;
 import com.example.permissiondemo.authorization.FavoriteMenuService;
@@ -8,6 +9,7 @@ import com.example.permissiondemo.common.BootstrapService;
 import com.example.permissiondemo.common.CommonCodeService;
 import com.example.permissiondemo.common.PageQuery;
 import com.example.permissiondemo.common.PageResult;
+import com.example.permissiondemo.common.SortDirection;
 
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.web.csrf.CsrfToken;
@@ -96,11 +98,22 @@ public class BootstrapController {
      */
     @GetMapping("/audit-events")
     @PreAuthorize("@programAuthorizationService.isAllowed(authentication, "
-            + "'SYSTEM_AUTH', 'AUTHORITY', 'AUTHORITY_READ')")
+            + "'SYSTEM_AUDIT', 'AUDIT', 'AUDIT_READ')")
     public ApiResponse<PageResult<AuditEventService.AuditEvent>> auditEvents(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String eventType,
+            @RequestParam(required = false) String actor,
+            @RequestParam(required = false) String targetType,
+            @RequestParam(required = false) String result,
+            @RequestParam(required = false) LocalDate from,
+            @RequestParam(required = false) LocalDate to,
+            @RequestParam(required = false) AuditEventService.AuditSort sort,
+            @RequestParam(required = false) SortDirection direction,
             @RequestParam(required = false) Integer page,
             @RequestParam(required = false) Integer size) {
-        return ApiResponse.ok(auditEventService.findPage(PageQuery.of(page, size)));
+        return ApiResponse.ok(auditEventService.findPage(
+                keyword, eventType, actor, targetType, result, from, to, sort, direction,
+                PageQuery.of(page, size)));
     }
 
     /** 서버 초기화 스냅샷과 현재 세션 CSRF 헤더·파라미터 정보를 묶은 HTTP 응답이다. */

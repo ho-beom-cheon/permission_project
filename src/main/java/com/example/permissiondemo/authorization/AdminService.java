@@ -37,22 +37,19 @@ public class AdminService {
 
     /** 전체 권한 마스터와 사용자별 유효 권한·부여 이력을 관리 화면 형식으로 반환한다. */
     public AuthorityAdminView loadAuthorities() {
-        List<UserAuthorityView> userViews = catalog.users().stream()
-                .map(user -> new UserAuthorityView(
-                        user.username(),
-                        user.organizationId(),
-                        effectiveAuthorityService.findEffectiveAuthorityIds(user.username()).stream()
-                                .sorted()
-                                .toList(),
-                        catalog.assignmentsFor(user.username()).stream()
-                                .sorted(Comparator.comparing(
-                                                AuthorizationCatalog.AuthorityAssignment::authorityId)
-                                        .thenComparing(item -> item.type().name())
-                                        .thenComparingLong(
-                                                AuthorizationCatalog.AuthorityAssignment::sequence))
-                                .toList()))
+        return loadAuthorities(null, null, null);
+    }
+
+    /** 권한 활성 상태와 사용자명·조직 조건을 적용한 관리 화면 검색 결과다. */
+    public AuthorityAdminView loadAuthorities(
+            String keyword, String organizationId, Boolean authorityActive) {
+        List<UserAuthorityView> userViews = catalog.searchUsers(keyword, organizationId).stream()
+                .map(this::toUserAuthorityView)
                 .toList();
-        return new AuthorityAdminView(catalog.authorities(), userViews, catalog.authorityVersion());
+        return new AuthorityAdminView(
+                catalog.searchAuthorities(keyword, authorityActive),
+                userViews,
+                catalog.authorityVersion());
     }
 
     /** 권한 마스터를 신규 등록하거나 표시명·활성 상태를 수정하고 감사 이력을 남긴다. */
@@ -67,6 +64,13 @@ public class AdminService {
                 "SUCCESS",
                 Map.of("changeType", created ? "CREATED" : "UPDATED"));
         return saved;
+    }
+
+    /** 비활성·미사용 권한을 삭제하고 연결 매핑 정리 사실을 감사 이력에 남긴다. */
+    public void deleteAuthority(String authorityId) {
+        catalog.deleteAuthority(authorityId);
+        auditEventService.record(
+                "AUTHORITY_DELETED", "AUTHORITY", authorityId, "SUCCESS", Map.of());
     }
 
     /** 직접 부여 또는 검증된 원천 사용자의 위임 권한을 승인 이력으로 추가한다. */
@@ -120,8 +124,13 @@ public class AdminService {
 
     /** 전체 메뉴 속성과 권한별 직접 허용 매핑을 관리 화면 형식으로 반환한다. */
     public MenuAdminView loadMenus() {
+        return loadMenus(null, null, null);
+    }
+
+    /** 메뉴명·ID와 활성·표시 여부를 조합한 메뉴 관리 검색 결과다. */
+    public MenuAdminView loadMenus(String keyword, Boolean active, Boolean displayed) {
         return new MenuAdminView(
-                catalog.menus(),
+                catalog.searchMenus(keyword, active, displayed),
                 catalog.authorities(),
                 catalog.allMenuGrants(),
                 catalog.menuVersion());
@@ -141,6 +150,12 @@ public class AdminService {
         return saved;
     }
 
+    /** 비활성 말단 메뉴 삭제와 연관 매핑 정리를 감사 이력으로 남긴다. */
+    public void deleteMenu(String menuId) {
+        catalog.deleteMenu(menuId);
+        auditEventService.record("MENU_DELETED", "MENU", menuId, "SUCCESS", Map.of());
+    }
+
     /** 권한-메뉴 직접 허용 여부를 저장하고 변경된 권한의 최종 메뉴 집합을 반환한다. */
     public Set<String> setMenuGrant(String authorityId, String menuId, boolean granted) {
         Set<String> grants = catalog.setMenuGrant(authorityId, menuId, granted);
@@ -155,9 +170,15 @@ public class AdminService {
 
     /** 프로그램·기능과 권한별 기능 매핑의 전체 관리 원본을 반환한다. */
     public ProgramAdminView loadPrograms() {
+        return loadPrograms(null, null, null, null);
+    }
+
+    /** 프로그램과 기능을 검색 조건으로 줄여 반환하되 권한 매핑 원장은 그대로 제공한다. */
+    public ProgramAdminView loadPrograms(
+            String keyword, Boolean active, String menuId, String programId) {
         return new ProgramAdminView(
-                catalog.programs(),
-                catalog.programActions(),
+                catalog.searchPrograms(keyword, active),
+                catalog.searchProgramActions(menuId, programId, keyword, active),
                 catalog.authorities(),
                 catalog.menus(),
                 catalog.allActionGrants(),
@@ -179,6 +200,12 @@ public class AdminService {
         return saved;
     }
 
+    /** 비활성 프로그램과 소속 기능·권한 매핑을 삭제하고 감사 이력을 남긴다. */
+    public void deleteProgram(String programId) {
+        catalog.deleteProgram(programId);
+        auditEventService.record("PROGRAM_DELETED", "PROGRAM", programId, "SUCCESS", Map.of());
+    }
+
     /** 프로그램 기능을 신규 등록하거나 수정하고 메뉴·프로그램 복합 키로 감사 이력을 남긴다. */
     public AuthorizationCatalog.ProgramActionDefinition saveAction(
             AuthorizationCatalog.ProgramActionDefinition action) {
@@ -192,6 +219,17 @@ public class AdminService {
                 "SUCCESS",
                 Map.of("changeType", created ? "CREATED" : "UPDATED"));
         return saved;
+    }
+
+    /** 비활성 프로그램 기능과 연결된 모든 권한 매핑을 삭제한다. */
+    public void deleteAction(AuthorizationCatalog.ProgramActionKey actionKey) {
+        catalog.deleteAction(actionKey);
+        auditEventService.record(
+                "PROGRAM_ACTION_DELETED",
+                "PROGRAM_ACTION",
+                actionKey.menuId() + ":" + actionKey.programId() + ":" + actionKey.actionId(),
+                "SUCCESS",
+                Map.of());
     }
 
     /** 권한-프로그램 기능 허용 여부를 저장하고 변경된 권한의 최종 기능 집합을 반환한다. */
@@ -232,6 +270,28 @@ public class AdminService {
             throw new ApiException(ErrorCode.CONFLICT, delegatedBy);
         }
         return source.username();
+    }
+
+    /** 사용자 프로필을 유효 권한과 정렬된 전체 이력이 포함된 관리 응답으로 변환한다. */
+    private UserAuthorityView toUserAuthorityView(AuthorizationCatalog.UserProfile user) {
+        return new UserAuthorityView(
+                user.username(),
+                user.organizationId(),
+                effectiveAuthorityService.findEffectiveAuthorityIds(user.username()).stream()
+                        .sorted()
+                        .toList(),
+                catalog.assignmentsFor(user.username()).stream()
+                        .sorted(Comparator.comparing(
+                                        AuthorizationCatalog.AuthorityAssignment::authorityId)
+                                .thenComparing(item -> item.type().name())
+                                .thenComparingLong(
+                                        AuthorizationCatalog.AuthorityAssignment::sequence))
+                        .toList());
+    }
+
+    /** 조직 선택 UI에서 사용할 전체 조직 마스터를 반환한다. */
+    public List<AuthorizationCatalog.OrganizationDefinition> loadOrganizations() {
+        return catalog.organizations();
     }
 
     /** 권한 마스터, 사용자별 계산 결과와 현재 권한 버전을 묶은 관리 응답이다. */

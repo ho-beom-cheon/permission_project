@@ -15,20 +15,24 @@
 <a class="skip-link" href="#adminMain">관리 본문 바로가기</a>
 <!-- 로그인 세션, 실행 환경, 로그아웃 기능을 모은 상단 업무 헤더 -->
 <header class="topbar">
+    <button id="btnAdminMenu" class="admin-menu-toggle" type="button"
+            aria-controls="adminSidebar" aria-expanded="false" aria-label="관리 메뉴 열기">
+        <span></span><span></span><span></span>
+    </button>
     <div class="page-title">
         <p class="eyebrow">SECURITY ADMINISTRATION</p>
-        <h1>통합 권한 관리</h1>
+        <h1>관리자 콘솔</h1>
     </div>
     <div class="topbar-actions">
-        <span class="environment"><i></i>LOCAL TEST</span>
+        <span class="environment"><i></i>SINGLE SERVER</span>
         <button id="btnPortalHome" type="button" class="logout-button" title="사용자 업무 포털로 이동">
             <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M3 11.5 12 4l9 7.5M5.5 10v10h13V10M9.5 20v-6h5v6"/>
             </svg>
-            사용자 홈
+            사용자 화면으로 전환
         </button>
         <div class="session-box">
-            <span class="avatar" aria-hidden="true">A</span>
+            <span class="avatar" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 2.5 20 6v5.4c0 5.1-3.2 8.7-8 10.1-4.8-1.4-8-5-8-10.1V6l8-3.5Z"/><path d="m8.5 12 2.2 2.2 4.8-5"/></svg></span>
             <span class="session-copy">
                 <small>현재 로그인</small>
                 <strong id="username">사용자 확인 중</strong>
@@ -45,7 +49,7 @@
 
 <div class="layout">
     <!-- 서버가 권한별로 필터링하고 조립한 메뉴 계층을 출력하는 영역 -->
-    <aside class="sidebar">
+    <aside id="adminSidebar" class="sidebar" aria-label="관리 메뉴">
         <div class="brand">
             <div class="brand-mark" aria-hidden="true">
                 <svg viewBox="0 0 24 24">
@@ -53,10 +57,14 @@
                     <path d="m8.5 12 2.2 2.2 4.8-5"/>
                 </svg>
             </div>
-            <div><strong>Access Studio</strong><span>Permission Console</span></div>
+            <div><strong>Access Studio</strong><span>ADMIN CONSOLE</span></div>
         </div>
-        <p class="sidebar-label">WORKSPACE</p>
+        <p class="sidebar-label">관리자 전용</p>
         <nav id="menuTree" aria-label="권한별 메뉴"></nav>
+        <p class="sidebar-label utility-label">TOOLS</p>
+        <nav class="admin-utility-nav" aria-label="운영 진단 도구">
+                        <a href="#developer-tools">운영 진단</a>
+        </nav>
         <div class="sidebar-guide">
             <b aria-hidden="true">i</b>
             <div><strong>서버 기준 메뉴</strong><p>로그인 세션의 유효 권한에 따라 메뉴가 자동 구성됩니다.</p></div>
@@ -65,24 +73,33 @@
     </aside>
 
     <main id="adminMain" tabindex="-1">
-        <!-- 서비스 목적과 권한 시스템의 정상 상태를 가장 먼저 전달하는 대시보드 소개 영역 -->
+        <!-- 네 관리 도메인의 운영 현황과 바로가기를 첫 화면에 제공하는 업무 대시보드 -->
         <section class="hero" aria-labelledby="heroTitle">
             <div class="hero-copy">
-                <span class="hero-status"><i>✓</i>AUTHORIZATION SYSTEM READY</span>
-                <h2 id="heroTitle">권한·메뉴·프로그램을<br><em>한 곳에서 운영하세요.</em></h2>
-                <p>권한 마스터부터 사용자 부여, 메뉴 노출, 프로그램 기능 매핑과 공통코드까지 변경 결과를 즉시 검증할 수 있습니다.</p>
-                <a href="#content">기능 테스트 시작 <span aria-hidden="true">→</span></a>
+                <span class="hero-status"><i>✓</i>OPERATIONS OVERVIEW</span>
+                <h2 id="heroTitle">오늘의 <em>운영 현황</em></h2>
+                <p>권한·메뉴·프로그램을 설정합니다. 적용 결과는 사용자 화면에서 확인하세요.</p>
+                <nav class="hero-shortcuts" aria-label="핵심 관리 바로가기">
+                    <a href="#authority-requests" data-required-action="AUTHORITY_REQUEST_READ">승인 대기 <span aria-hidden="true">→</span></a>
+                    <a href="#authority-master" data-required-action="AUTHORITY_READ">권한 관리 <span aria-hidden="true">→</span></a>
+                    <a href="#program" data-required-action="PROGRAM_READ">프로그램 관리 <span aria-hidden="true">→</span></a>
+                    <a href="#audit" data-required-action="AUDIT_READ">감사 이력 <span aria-hidden="true">→</span></a>
+                </nav>
             </div>
-            <div class="hero-graphic" aria-hidden="true">
-                <div class="orbit orbit-large"></div>
-                <div class="orbit orbit-small"></div>
-                <div class="shield">
-                    <svg viewBox="0 0 24 24">
-                        <path d="M12 3 19 6v5c0 4.6-2.8 7.8-7 9-4.2-1.2-7-4.4-7-9V6l7-3Z"/>
-                        <path d="m9 12 2 2 4-4"/>
-                    </svg>
+            <div class="overview-panel" aria-label="핵심 관리 데이터 요약">
+                <div class="overview-panel-title">
+                    <div><small>LIVE OVERVIEW</small><strong>운영 데이터 현황</strong></div>
+                    <span id="dashboardLoadState" class="load-state" data-state="idle" aria-live="polite">조회 대기</span>
                 </div>
-                <i class="node node-one"></i><i class="node node-two"></i><i class="node node-three"></i>
+                <div class="overview-metrics">
+                    <a href="#authority-requests" data-required-action="AUTHORITY_REQUEST_READ"><span>승인 대기</span><strong id="dashboardPendingCount">—</strong><small>처리할 요청</small></a>
+                    <a href="#authority-master" data-required-action="AUTHORITY_READ"><span>권한 관리</span><strong id="dashboardAuthorityCount">—</strong><small>활성 권한</small></a>
+                    <a href="#program" data-required-action="PROGRAM_READ"><span>프로그램 관리</span><strong id="dashboardProgramCount">—</strong><small>활성 프로그램</small></a>
+                    <a href="#project" data-required-action="PROJECT_READ"><span>프로젝트 관리</span><strong id="dashboardProjectCount">—</strong><small>진행 프로젝트</small></a>
+                    <a href="#common-code" data-required-action="COMMON_CODE_READ"><span>공통코드 관리</span><strong id="dashboardCodeCount">—</strong><small>전체 코드 항목</small></a>
+                    <a href="#audit" data-required-action="AUDIT_READ"><span>최근 오류</span><strong id="dashboardErrorCount">—</strong><small>최근 7일 실패</small></a>
+                </div>
+                <p id="dashboardSummary">관리 권한이 확인되면 각 영역의 최신 현황을 표시합니다.</p>
             </div>
         </section>
 
@@ -117,22 +134,37 @@
             <div class="actions section-actions">
                 <button id="btnAuthMasterRead" data-protected data-action="AUTHORITY_READ"
                         type="button" disabled>권한 마스터 새로고침</button>
-                <span id="authorityVersion" class="version-badge">버전 확인 중</span>
+                <div class="section-state">
+                    <span id="authorityMasterLoadState" class="load-state" data-state="idle" aria-live="polite">조회 대기</span>
+                    <span id="authorityVersion" class="version-badge">버전 확인 중</span>
+                </div>
+            </div>
+            <div class="data-toolbar" role="search" aria-label="권한 마스터 검색 및 필터">
+                <label class="search-field"><span>권한 검색</span><input id="authorityMasterSearch" type="search" placeholder="권한 ID 또는 권한명"></label>
+                <label><span>사용 상태</span><select id="authorityMasterStatusFilter"><option value="ALL">전체</option><option value="ACTIVE">활성</option><option value="INACTIVE">비활성</option></select></label>
+                <span id="authorityMasterResultCount" class="result-count">0건</span>
+                <button id="btnAuthMasterResetFilters" type="button" class="subtle-button">필터 초기화</button>
+                <button id="btnAuthMasterNew" type="button" class="subtle-button">신규 권한</button>
             </div>
             <div class="table-wrap">
                 <table>
+                    <caption class="sr-only">권한 마스터 목록</caption>
                     <thead><tr><th>권한 ID</th><th>권한명</th><th>활성 상태</th><th>유효 사용자 수</th></tr></thead>
                     <tbody id="authorityMasterRows">
                     <tr><td colspan="4">권한 마스터를 불러오는 중입니다.</td></tr>
                     </tbody>
                 </table>
             </div>
-            <div class="code-form">
+            <div class="code-form admin-edit-form authority-master-form">
                 <label>권한 ID <input id="authMasterId" maxlength="50" placeholder="예: AUTH_REPORT_MANAGER"></label>
                 <label>권한명 <input id="authMasterName" maxlength="100" placeholder="예: 보고서 관리자"></label>
                 <label>활성 <input id="authMasterActive" type="checkbox" checked></label>
-                <button id="btnAuthMasterSave" data-protected data-action="AUTHORITY_UPDATE"
-                        type="button" disabled>권한 마스터 저장</button>
+                <div class="code-form-actions">
+                    <button id="btnAuthMasterSave" data-protected data-action="AUTHORITY_UPDATE"
+                            type="button" disabled>권한 마스터 저장</button>
+                    <button id="btnAuthMasterDelete" data-protected data-action="AUTHORITY_UPDATE"
+                            type="button" class="danger-outline" disabled>선택 권한 삭제</button>
+                </div>
             </div>
         </section>
 
@@ -144,18 +176,31 @@
             <div class="actions">
                 <button id="btnAuthorityRead" data-protected data-action="AUTHORITY_READ"
                         type="button" disabled>사용자 권한 새로고침</button>
-                <button id="btnAuditRead" data-protected data-action="AUTHORITY_READ"
-                        type="button" disabled>감사 이력 조회</button>
+                <span id="authorityLoadState" class="load-state" data-state="idle" aria-live="polite">조회 대기</span>
+            </div>
+            <div class="domain-stats" aria-label="사용자 권한 요약">
+                <div><strong id="authorityUserCount">0</strong><span>관리 사용자</span></div>
+                <div><strong id="authorityEffectiveGrantCount">0</strong><span>현재 유효 권한</span></div>
+                <div><strong id="authorityDelegatedCount">0</strong><span>위임 이력</span></div>
+                <div><strong id="authorityRevokedCount">0</strong><span>회수 이력</span></div>
+            </div>
+            <div class="data-toolbar" role="search" aria-label="사용자 권한 검색 및 필터">
+                <label class="search-field"><span>사용자 검색</span><input id="authorityUserSearch" type="search" placeholder="사용자, 조직 또는 권한"></label>
+                <label><span>부여 유형</span><select id="authorityGrantTypeFilter"><option value="ALL">전체</option><option value="DIRECT">직접 부여</option><option value="DELEGATED">위임</option><option value="REVOKED">회수 이력 있음</option></select></label>
+                <span id="authorityUserResultCount" class="result-count">0명</span>
+                <button id="btnAuthorityResetFilters" type="button" class="subtle-button">필터 초기화</button>
+                <button id="btnAuthorityNew" type="button" class="subtle-button">부여값 초기화</button>
             </div>
             <div class="table-wrap">
                 <table>
+                    <caption class="sr-only">사용자별 유효 권한과 변경 이력</caption>
                     <thead><tr><th>사용자</th><th>조직</th><th>현재 유효 권한</th><th>부여·회수 이력</th></tr></thead>
                     <tbody id="authorityUserRows">
                     <tr><td colspan="4">권한 현황을 불러오는 중입니다.</td></tr>
                     </tbody>
                 </table>
             </div>
-            <div class="code-form">
+            <div class="code-form admin-edit-form authority-assignment-form">
                 <label>대상 사용자 <select id="authorityUserSelect"></select></label>
                 <label>권한 <select id="authorityIdSelect"></select></label>
                 <label>부여 유형
@@ -165,57 +210,113 @@
                     </select>
                 </label>
                 <label>위임 원천 사용자 <select id="authoritySourceSelect" disabled></select></label>
-                <label>시작일 <input id="authorityValidFrom" type="date" value="2020-01-01"></label>
+                <label>시작일 <input id="authorityValidFrom" type="date"></label>
                 <label>종료일 <input id="authorityValidTo" type="date" value="2099-12-31"></label>
-                <button id="btnAuthorityUpdate" data-protected data-action="AUTHORITY_UPDATE"
-                        type="button" disabled>권한 부여</button>
-                <button id="btnAuthorityRevoke" data-protected data-action="AUTHORITY_UPDATE"
-                        type="button" disabled>선택 권한 회수</button>
+                <div class="code-form-actions">
+                    <button id="btnAuthorityUpdate" data-protected data-action="AUTHORITY_UPDATE"
+                            type="button" disabled>권한 부여</button>
+                    <button id="btnAuthorityRevoke" data-protected data-action="AUTHORITY_UPDATE"
+                            type="button" disabled>선택 권한 회수</button>
+                </div>
             </div>
         </section>
 
-        <!-- 프로그램 마스터, 세부 기능과 권한별 기능 허용 매핑을 한 흐름에서 편집하는 영역 -->
+        <!-- 신청 근거와 적용 기간을 확인한 뒤 서버 버전으로 승인·반려하는 운영 큐 -->
+        <section id="authority-requests" class="card accounts-card">
+            <div class="card-heading-row">
+                <div><span class="card-kicker">APPROVAL QUEUE</span><h2>권한 요청 승인</h2></div>
+                <button id="btnAuthorityRequestRead" data-protected data-action="AUTHORITY_REQUEST_READ"
+                        type="button" aria-describedby="authorityRequestPermission" disabled>새로고침</button>
+            </div>
+            <p id="authorityRequestPermission" class="permission-help">승인 권한에 따라 조회·승인·반려 기능이 제어됩니다.</p>
+            <div class="table-toolbar">
+                <label class="search-field"><span>요청 검색</span><input id="authorityRequestSearch" type="search" placeholder="사용자 또는 권한 ID"></label>
+                <label><span>처리 상태</span><select id="authorityRequestStatus"><option value="">전체</option><option value="REQUESTED">승인 대기</option><option value="APPROVED">승인</option><option value="REJECTED">반려</option><option value="CANCELLED">취소</option></select></label>
+                <label><span>페이지 크기</span><select id="authorityRequestSize"><option>10</option><option selected>20</option><option>50</option></select></label>
+            </div>
+            <p id="authorityRequestSummary" class="result-count" aria-live="polite">조회 대기</p>
+            <div class="table-scroll" data-scroll-label="권한 요청 표는 좌우로 스크롤할 수 있습니다.">
+                <table><thead><tr><th>요청</th><th>사용자</th><th>권한</th><th>유형</th><th>기간</th><th>상태</th><th>신청 사유</th><th>작업</th></tr></thead>
+                    <tbody id="authorityRequestRows"><tr><td colspan="8">권한 요청을 조회해 주세요.</td></tr></tbody></table>
+            </div>
+            <div id="authorityRequestPagination" class="admin-pagination" aria-label="권한 요청 페이지"></div>
+        </section>
+
         <section id="program" class="card accounts-card program-card">
             <span class="card-kicker">PROGRAM MANAGEMENT</span>
             <h2>프로그램 관리</h2>
             <p>프로그램을 등록하고 메뉴 안의 세부 기능을 연결한 뒤, 각 권한이 실행할 수 있는 기능을 허용하거나 해제합니다.</p>
             <div class="actions section-actions">
-                <button id="btnProgramRead" data-protected data-action="AUTHORITY_READ"
+                <button id="btnProgramRead" data-protected data-action="PROGRAM_READ"
                         type="button" disabled>프로그램 현황 새로고침</button>
-                <span id="programVersion" class="version-badge">버전 확인 중</span>
+                <div class="section-state">
+                    <span id="programLoadState" class="load-state" data-state="idle" aria-live="polite">조회 대기</span>
+                    <span id="programVersion" class="version-badge">버전 확인 중</span>
+                </div>
+            </div>
+            <div class="domain-stats" aria-label="프로그램 관리 요약">
+                <div><strong id="programTotalCount">0</strong><span>전체 프로그램</span></div>
+                <div><strong id="programActiveCount">0</strong><span>활성 프로그램</span></div>
+                <div><strong id="programActionCount">0</strong><span>등록 기능</span></div>
+                <div><strong id="programGrantCount">0</strong><span>권한-기능 매핑</span></div>
             </div>
 
             <div class="admin-subsection">
                 <div class="subsection-title"><strong>1. 프로그램 마스터</strong><span>업무 프로그램의 기준 정보</span></div>
+                <div class="data-toolbar" role="search" aria-label="프로그램 마스터 검색 및 필터">
+                    <label class="search-field"><span>프로그램 검색</span><input id="programSearch" type="search" placeholder="프로그램 ID, 이름 또는 설명"></label>
+                    <label><span>사용 상태</span><select id="programStatusFilter"><option value="ALL">전체</option><option value="ACTIVE">활성</option><option value="INACTIVE">비활성</option></select></label>
+                    <span id="programResultCount" class="result-count">0건</span>
+                    <button id="btnProgramResetFilters" type="button" class="subtle-button">필터 초기화</button>
+                    <button id="btnProgramNew" type="button" class="subtle-button">신규 프로그램</button>
+                </div>
                 <div class="table-wrap">
                     <table>
-                        <thead><tr><th>프로그램 ID</th><th>프로그램명</th><th>설명</th><th>상태</th></tr></thead>
+                        <caption class="sr-only">프로그램 마스터 목록</caption>
+                        <thead><tr><th>프로그램 ID</th><th>프로그램명</th><th>설명</th><th>기능 수</th><th>상태</th></tr></thead>
                         <tbody id="programRows">
-                        <tr><td colspan="4">프로그램 마스터를 불러오는 중입니다.</td></tr>
+                        <tr><td colspan="5">프로그램 마스터를 불러오는 중입니다.</td></tr>
                         </tbody>
                     </table>
                 </div>
-                <div class="code-form">
+                <div class="code-form admin-edit-form program-master-form">
                     <label>프로그램 ID <input id="programIdInput" maxlength="50" placeholder="예: REPORT"></label>
                     <label>프로그램명 <input id="programNameInput" maxlength="100" placeholder="예: 보고서 관리"></label>
                     <label class="wide-field">설명 <input id="programDescInput" maxlength="200" placeholder="프로그램의 업무 목적을 입력하세요"></label>
+                    <label>실행 화면 <select id="programScreenSelect">
+                        <option value="NONE">연결 안 함</option>
+                        <option value="CONTENT_DEMO">콘텐츠 업무 예제</option>
+                        <option value="AUTHORITY_REQUEST">내 권한 신청</option>
+                    </select></label>
                     <label>활성 <input id="programActiveInput" type="checkbox" checked></label>
-                    <button id="btnProgramSave" data-protected data-action="AUTHORITY_UPDATE"
-                            type="button" disabled>프로그램 저장</button>
+                    <div class="code-form-actions">
+                        <button id="btnProgramSave" data-protected data-action="PROGRAM_SAVE"
+                                type="button" disabled>프로그램 저장</button>
+                        <button id="btnProgramDelete" data-protected data-action="PROGRAM_SAVE"
+                                type="button" class="danger-outline" disabled>선택 프로그램 삭제</button>
+                    </div>
                 </div>
             </div>
 
             <div class="admin-subsection">
                 <div class="subsection-title"><strong>2. 프로그램 기능</strong><span>메뉴·프로그램·기능·화면 컴포넌트 연결</span></div>
+                <div class="data-toolbar" role="search" aria-label="프로그램 기능 검색 및 필터">
+                    <label class="search-field"><span>기능 검색</span><input id="programActionSearch" type="search" placeholder="메뉴, 프로그램, 기능 또는 컴포넌트"></label>
+                    <label><span>사용 상태</span><select id="programActionStatusFilter"><option value="ALL">전체</option><option value="ACTIVE">활성</option><option value="INACTIVE">비활성</option><option value="UNMAPPED">권한 미매핑</option></select></label>
+                    <span id="programActionResultCount" class="result-count">0건</span>
+                    <button id="btnProgramActionResetFilters" type="button" class="subtle-button">필터 초기화</button>
+                    <button id="btnActionNew" type="button" class="subtle-button">신규 기능</button>
+                </div>
                 <div class="table-wrap">
                     <table>
-                        <thead><tr><th>메뉴</th><th>프로그램</th><th>기능 ID</th><th>기능명</th><th>컴포넌트</th><th>정렬</th><th>상태</th></tr></thead>
+                        <caption class="sr-only">메뉴와 프로그램에 연결된 기능 목록</caption>
+                        <thead><tr><th>메뉴</th><th>프로그램</th><th>기능 ID</th><th>기능명</th><th>컴포넌트</th><th>정렬</th><th>권한 매핑</th><th>상태</th></tr></thead>
                         <tbody id="programActionRows">
-                        <tr><td colspan="7">프로그램 기능을 불러오는 중입니다.</td></tr>
+                        <tr><td colspan="8">프로그램 기능을 불러오는 중입니다.</td></tr>
                         </tbody>
                     </table>
                 </div>
-                <div class="code-form">
+                <div class="code-form admin-edit-form program-action-form">
                     <label>메뉴 <select id="actionMenuSelect"></select></label>
                     <label>프로그램 <select id="actionProgramSelect"></select></label>
                     <label>기능 ID <input id="actionIdInput" maxlength="50" placeholder="예: REPORT_READ"></label>
@@ -223,21 +324,140 @@
                     <label>컴포넌트 ID <input id="actionComponentInput" maxlength="100" placeholder="예: btnReportRead"></label>
                     <label>정렬 순서 <input id="actionSortInput" type="number" min="0" max="9999" value="10"></label>
                     <label>활성 <input id="actionActiveInput" type="checkbox" checked></label>
-                    <button id="btnActionSave" data-protected data-action="AUTHORITY_UPDATE"
-                            type="button" disabled>프로그램 기능 저장</button>
+                    <div class="code-form-actions">
+                        <button id="btnActionSave" data-protected data-action="PROGRAM_ACTION_SAVE"
+                                type="button" disabled>프로그램 기능 저장</button>
+                        <button id="btnActionDelete" data-protected data-action="PROGRAM_ACTION_SAVE"
+                                type="button" class="danger-outline" disabled>선택 기능 삭제</button>
+                    </div>
                 </div>
             </div>
 
             <div class="admin-subsection">
                 <div class="subsection-title"><strong>3. 권한-기능 매핑</strong><span>선택 권한이 실행할 수 있는 기능</span></div>
-                <div class="code-form">
+                <div class="code-form admin-edit-form action-mapping-form">
                     <label>권한 <select id="actionAuthoritySelect"></select></label>
                     <label class="wide-field">프로그램 기능 <select id="actionGrantSelect"></select></label>
                     <label>실행 허용 <input id="actionGrantedInput" type="checkbox"></label>
-                    <button id="btnActionGrant" data-protected data-action="AUTHORITY_UPDATE"
-                            type="button" disabled>권한-기능 저장</button>
+                    <div class="code-form-actions">
+                        <button id="btnActionGrant" data-protected data-action="PROGRAM_GRANT"
+                                type="button" disabled>권한-기능 저장</button>
+                    </div>
                 </div>
                 <p id="actionGrantState" class="mapping-state">권한과 기능을 선택하면 현재 매핑 상태를 표시합니다.</p>
+                <div id="actionMappingSummary" class="mapping-summary" aria-live="polite">선택 기능에 연결된 권한을 이곳에 표시합니다.</div>
+            </div>
+        </section>
+
+        <!-- 프로젝트 일정과 책임자, 참여자 역할을 한 흐름에서 관리하는 영역 -->
+        <section id="project" class="card accounts-card project-card">
+            <span class="card-kicker">PROJECT OPERATIONS</span>
+            <h2>프로젝트 관리</h2>
+            <p>프로젝트의 기간·상태·책임자를 관리하고 참여자별 역할을 연결합니다. 저장 시 버전을 확인해 동시 수정을 보호합니다.</p>
+            <div class="project-stats domain-stats" aria-label="프로젝트 상태 요약">
+                <div><strong id="projectTotalCount">0</strong><span>전체 프로젝트</span></div>
+                <div><strong id="projectActiveCount">0</strong><span>진행 중</span></div>
+                <div><strong id="projectMemberCount">0</strong><span>활성 참여자</span></div>
+                <div><strong id="projectCompletedCount">0</strong><span>완료 프로젝트</span></div>
+            </div>
+            <div class="actions section-actions">
+                <button id="btnProjectRead" data-protected data-action="PROJECT_READ"
+                        type="button" disabled>프로젝트 현황 새로고침</button>
+                <div class="section-state">
+                    <span id="projectLoadState" class="load-state" data-state="idle" aria-live="polite">조회 대기</span>
+                    <span id="projectSelection" class="version-badge">신규 프로젝트</span>
+                </div>
+            </div>
+            <div class="data-toolbar" role="search" aria-label="프로젝트 검색 및 필터">
+                <label class="search-field"><span>프로젝트 검색</span><input id="projectSearch" type="search" placeholder="프로젝트 ID, 이름, 설명 또는 책임자"></label>
+                <label><span>프로젝트 상태</span><select id="projectStatusFilter"><option value="ALL">전체</option><option value="PLANNED">계획</option><option value="ACTIVE">진행 중</option><option value="ON_HOLD">보류</option><option value="COMPLETED">완료</option><option value="INACTIVE">비활성</option></select></label>
+                <span id="projectResultCount" class="result-count">0건</span>
+                <button id="btnProjectResetFilters" type="button" class="subtle-button">필터 초기화</button>
+                <button id="btnProjectNew" type="button" class="subtle-button">신규 프로젝트</button>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <caption class="sr-only">프로젝트 일정, 책임자, 참여자 및 버전 목록</caption>
+                    <thead><tr><th>프로젝트 ID</th><th>프로젝트명</th><th>상태</th><th>기간</th><th>책임자</th><th>참여자</th><th>버전</th></tr></thead>
+                    <tbody id="projectRows">
+                    <tr><td colspan="7">프로젝트 현황을 불러오는 중입니다.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="admin-subsection">
+                <div class="subsection-title"><strong>1. 프로젝트 마스터</strong><span>일정·상태·책임자 기준 정보</span></div>
+                <div class="code-form admin-edit-form project-master-form">
+                    <label>프로젝트 ID <input id="projectIdInput" maxlength="50" placeholder="예: PRJ_NEW_SERVICE"></label>
+                    <label>프로젝트명 <input id="projectNameInput" maxlength="100"></label>
+                    <label class="wide-field">설명 <input id="projectDescInput" maxlength="500"></label>
+                    <label>상태
+                        <select id="projectStatusSelect">
+                            <option value="PLANNED">계획</option>
+                            <option value="ACTIVE">진행 중</option>
+                            <option value="ON_HOLD">보류</option>
+                            <option value="COMPLETED">완료</option>
+                        </select>
+                    </label>
+                    <label>시작일 <input id="projectStartInput" type="date"></label>
+                    <label>종료일 <input id="projectEndInput" type="date"></label>
+                    <label>책임자 <select id="projectOwnerSelect"></select></label>
+                    <label class="wide-field">상태 변경 사유 <input id="projectStatusReasonInput" maxlength="300" placeholder="상태를 변경할 때 사유를 입력하세요"></label>
+                    <label>활성 <input id="projectActiveInput" type="checkbox" checked></label>
+                    <input id="projectVersionInput" type="hidden" value="0">
+                    <div class="code-form-actions">
+                        <button id="btnProjectSave" data-protected data-action="PROJECT_UPDATE"
+                                type="button" disabled>프로젝트 저장</button>
+                    </div>
+                </div>
+            </div>
+            <div class="admin-subsection">
+                <div class="subsection-title"><strong>2. 프로젝트 참여자</strong><span>선택 프로젝트의 사용자별 역할</span></div>
+                <div class="table-wrap compact-table">
+                    <table>
+                        <thead><tr><th>사용자</th><th>역할</th><th>상태</th></tr></thead>
+                        <tbody id="projectMemberRows">
+                        <tr><td colspan="3">프로젝트를 선택해 주세요.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="code-form admin-edit-form project-member-form">
+                    <label>참여 사용자 <select id="projectMemberUserSelect"></select></label>
+                    <label>프로젝트 역할
+                        <select id="projectMemberRoleSelect">
+                            <option value="MANAGER">관리자</option>
+                            <option value="MEMBER">참여자</option>
+                            <option value="VIEWER">조회자</option>
+                            <option value="OWNER">책임자</option>
+                        </select>
+                    </label>
+                    <label>활성 <input id="projectMemberActiveInput" type="checkbox" checked></label>
+                    <div class="code-form-actions">
+                        <button id="btnProjectMemberSave" data-protected data-action="PROJECT_MEMBER_MANAGE"
+                                type="button" disabled>참여자 저장</button>
+                        <button id="btnProjectMemberRemove" data-protected data-action="PROJECT_MEMBER_MANAGE"
+                                type="button" class="danger-outline" disabled>참여자 제거</button>
+                    </div>
+                </div>
+            </div>
+            <div class="admin-subsection project-governance">
+                <div class="subsection-title"><strong>3. 프로젝트 거버넌스</strong><span>상태 이력·오너 이전·보관 및 복원</span></div>
+                <div class="table-wrap compact-table">
+                    <table>
+                        <caption class="sr-only">선택 프로젝트의 상태 변경 이력</caption>
+                        <thead><tr><th>순번</th><th>상태 변경</th><th>변경자</th><th>사유</th><th>변경 일시</th></tr></thead>
+                        <tbody id="projectStatusHistoryRows"><tr><td colspan="5">프로젝트를 선택해 주세요.</td></tr></tbody>
+                    </table>
+                </div>
+                <div class="code-form admin-edit-form governance-actions project-governance-form">
+                    <label>새 책임자 <select id="projectNewOwnerSelect"></select></label>
+                    <label class="wide-field">변경 사유 <input id="projectLifecycleReason" maxlength="300" placeholder="오너 이전·보관·복원 사유를 입력하세요"></label>
+                    <div class="code-form-actions">
+                        <button id="btnProjectHistoryRead" data-protected data-action="PROJECT_READ" type="button" disabled>상태 이력 새로고침</button>
+                        <button id="btnProjectOwner" data-protected data-action="PROJECT_OWNER_TRANSFER" type="button" disabled>오너 이전</button>
+                        <button id="btnProjectArchive" data-protected data-action="PROJECT_ARCHIVE" type="button" class="danger-outline" disabled>프로젝트 보관</button>
+                        <button id="btnProjectRestore" data-protected data-action="PROJECT_ARCHIVE" type="button" disabled>프로젝트 복원</button>
+                    </div>
+                </div>
             </div>
         </section>
 
@@ -247,7 +467,7 @@
             <h2>메뉴 관리</h2>
             <p>행을 누르면 메뉴 속성을 편집할 수 있고, 권한별로 직접 허용할 메뉴를 연결하거나 해제할 수 있습니다.</p>
             <div class="actions">
-                <button id="btnMenuRead" data-protected data-action="AUTHORITY_READ"
+                <button id="btnMenuRead" data-protected data-action="MENU_READ"
                         type="button" disabled>메뉴 현황 새로고침</button>
             </div>
             <div class="table-wrap">
@@ -258,7 +478,7 @@
                     </tbody>
                 </table>
             </div>
-            <div class="code-form">
+            <div class="code-form admin-edit-form menu-master-form">
                 <label>메뉴 ID <input id="menuIdInput" maxlength="50" placeholder="예: REPORT_LIST"></label>
                 <label>상위 메뉴 <select id="menuParentSelect"></select></label>
                 <label>메뉴명 <input id="menuNameInput" maxlength="100"></label>
@@ -266,21 +486,28 @@
                 <label>정렬 순서 <input id="menuSortInput" type="number" min="0" max="9999" value="100"></label>
                 <label>활성 <input id="menuActiveInput" type="checkbox" checked></label>
                 <label>화면 표시 <input id="menuDisplayedInput" type="checkbox" checked></label>
+                <label>화면 영역 <select id="menuAreaSelect"><option value="USER">사용자 업무공간</option><option value="ADMIN">관리자 콘솔</option></select></label>
                 <label>공용 메뉴 <input id="menuPublicInput" type="checkbox"></label>
-                <button id="btnMenuSave" data-protected data-action="AUTHORITY_UPDATE"
-                        type="button" disabled>메뉴 저장</button>
+                <div class="code-form-actions">
+                    <button id="btnMenuSave" data-protected data-action="MENU_SAVE"
+                            type="button" disabled>메뉴 저장</button>
+                    <button id="btnMenuDelete" data-protected data-action="MENU_DEACTIVATE"
+                            type="button" class="danger-outline" disabled>선택 메뉴 삭제</button>
+                </div>
             </div>
-            <div class="code-form">
+            <div class="code-form admin-edit-form menu-grant-form">
                 <label>권한 <select id="menuAuthoritySelect"></select></label>
                 <label>메뉴 <select id="menuGrantSelect"></select></label>
                 <label>직접 접근 허용 <input id="menuGrantedInput" type="checkbox"></label>
-                <button id="btnMenuGrant" data-protected data-action="AUTHORITY_UPDATE"
-                        type="button" disabled>권한-메뉴 저장</button>
+                <div class="code-form-actions">
+                    <button id="btnMenuGrant" data-protected data-action="MENU_GRANT"
+                            type="button" disabled>권한-메뉴 저장</button>
+                </div>
             </div>
         </section>
 
         <!-- 사용자 편의 데이터와 실제 메뉴 접근 권한의 교차 검증 영역 -->
-        <section class="card favorite-card">
+        <section id="favorites" class="card favorite-card">
             <span class="card-kicker">MY FAVORITES</span>
             <h2>관심 메뉴</h2>
             <p>등록 여부는 편의 기능일 뿐이며, 서버가 현재 접근 가능한 메뉴인지 다시 검사합니다.</p>
@@ -299,25 +526,76 @@
             <p>그룹을 선택해 비활성 항목까지 조회하고, 행을 눌러 코드명·상위 코드·정렬·기간·활성 상태를 수정합니다.</p>
             <div class="code-form">
                 <label>코드 그룹 <select id="commonGroupSelect"></select></label>
-                <span id="codeVersion">버전 확인 중</span>
+                <div class="section-state">
+                    <span id="commonCodeLoadState" class="load-state" data-state="idle" aria-live="polite">조회 대기</span>
+                    <span id="codeVersion">버전 확인 중</span>
+                </div>
+                <button id="btnCommonCodeRead" data-protected data-action="COMMON_CODE_READ" type="button" disabled>공통코드 새로고침</button>
             </div>
+            <div class="domain-stats" aria-label="공통코드 요약">
+                <div><strong id="commonCodeGroupCount">0</strong><span>코드 그룹</span></div>
+                <div><strong id="commonCodeTotalCount">0</strong><span>전체 코드</span></div>
+                <div><strong id="commonCodeActiveCount">0</strong><span>현재 활성</span></div>
+                <div><strong id="commonCodeInactiveCount">0</strong><span>비활성·기간 외</span></div>
+            </div>
+            <div class="data-toolbar" role="search" aria-label="공통코드 검색 및 필터">
+                <label class="search-field"><span>코드 검색</span><input id="commonCodeSearch" type="search" placeholder="코드, 코드명 또는 상위 코드"></label>
+                <label><span>적용 상태</span><select id="commonCodeStatusFilter"><option value="ALL">전체</option><option value="CURRENT">현재 유효</option><option value="ACTIVE">활성 설정</option><option value="INACTIVE">비활성 설정</option><option value="OUT_OF_PERIOD">현재 비유효</option></select></label>
+                <span id="commonCodeResultCount" class="result-count">0건</span>
+                <button id="btnCodeResetFilters" type="button" class="subtle-button">필터 초기화</button>
+                <button id="btnCodeNew" type="button" class="subtle-button">신규 코드</button>
+            </div>
+            <div class="admin-subsection code-group-editor">
+                <div class="subsection-title"><strong>1. 코드 그룹</strong><span id="commonCodeGroupSelection">그룹을 선택하면 기준정보를 편집할 수 있습니다.</span></div>
+                <div class="code-form common-code-group-form">
+                    <label>그룹 코드 <input id="commonCodeGroupId" maxlength="30" placeholder="예: SERVICE_TYPE"></label>
+                    <label>그룹명 <input id="commonCodeGroupName" maxlength="100"></label>
+                    <label class="wide-field">설명 <input id="commonCodeGroupDesc" maxlength="200"></label>
+                    <label>정렬 순서 <input id="commonCodeGroupSort" type="number" min="0" max="9999" value="100"></label>
+                    <label>활성 <input id="commonCodeGroupActive" type="checkbox" checked></label>
+                    <div class="code-form-actions">
+                        <button id="btnCommonCodeGroupNew" type="button" class="subtle-button">신규 그룹</button>
+                        <button id="btnCommonCodeGroup" data-protected data-action="COMMON_CODE_GROUP_SAVE" type="button" disabled>코드 그룹 저장</button>
+                        <button id="btnCommonCodeGroupDelete" data-protected data-action="COMMON_CODE_DELETE" type="button" class="danger-outline" disabled>선택 그룹 삭제</button>
+                    </div>
+                </div>
+            </div>
+            <div class="admin-subsection">
+                <div class="subsection-title"><strong>2. 코드 항목</strong><span>계층·정렬·적용 기간과 상태 관리</span></div>
             <div class="table-wrap">
                 <table>
+                    <caption class="sr-only">선택 그룹의 공통코드 목록</caption>
                     <thead><tr><th>코드</th><th>코드명</th><th>상위 코드</th><th>정렬</th><th>활성</th><th>적용 기간</th></tr></thead>
                     <tbody id="commonCodeRows">
                     <tr><td colspan="6">공통코드 그룹을 불러오는 중입니다.</td></tr>
                     </tbody>
                 </table>
             </div>
-            <div class="code-form">
-                <label>코드 <input id="codeValue" value="DEMO" maxlength="30"></label>
-                <label>코드명 <input id="codeName" value="테스트 코드" maxlength="100"></label>
+            <div class="code-form common-code-item-form">
+                <label>코드 <input id="codeValue" maxlength="30" placeholder="예: APPROVED"></label>
+                <label>코드명 <input id="codeName" maxlength="100" placeholder="예: 승인"></label>
                 <label>상위 코드 <select id="codeParentSelect"></select></label>
-                <label>정렬 순서 <input id="codeSortInput" type="number" min="0" max="9999" value="90"></label>
+                <label>정렬 순서 <input id="codeSortInput" type="number" min="0" max="9999" value="10"></label>
                 <label>활성 <input id="codeActiveInput" type="checkbox" checked></label>
-                <label>시작일 <input id="codeValidFrom" type="date" value="2000-01-01"></label>
+                <label>시작일 <input id="codeValidFrom" type="date"></label>
                 <label>종료일 <input id="codeValidTo" type="date" value="2099-12-31"></label>
-                <button id="btnCommonCodeSave" data-protected type="button" disabled>공통코드 저장</button>
+                <div class="code-form-actions">
+                    <button id="btnCommonCodeSave" data-protected data-action="COMMON_CODE_SAVE" type="button" disabled>공통코드 저장</button>
+                    <button id="btnCommonCodeDeactivate" data-protected data-action="COMMON_CODE_DEACTIVATE" type="button" class="danger-outline" disabled>하위 포함 비활성화</button>
+                    <button id="btnCommonCodeDeleteItem" data-protected data-action="COMMON_CODE_DELETE" type="button" class="danger-outline" disabled>선택 코드 삭제</button>
+                </div>
+            </div>
+            <details class="bulk-import-panel">
+                <summary>CSV 일괄 등록 <span>최대 100건 · 전체 검증 후 한 버전으로 반영</span></summary>
+                <p><code>code,name,parentCode,sortOrder,active,validFrom,validTo</code> 순서이며 첫 행 헤더는 선택 사항입니다. 쉼표가 포함된 값은 큰따옴표로 감싸세요.</p>
+                <label for="commonCodeBulkCsv">일괄 등록 CSV</label>
+                <textarea id="commonCodeBulkCsv" rows="7" spellcheck="false"
+                          placeholder="LEVEL_1,1단계,,10,true,2026-01-01,2099-12-31&#10;LEVEL_1_DETAIL,1단계 상세,LEVEL_1,20,true,2026-01-01,2099-12-31"></textarea>
+                <div class="actions">
+                    <button id="btnCommonCodeImportTemplate" type="button" class="subtle-button">입력 예시</button>
+                    <button id="btnCommonCodeImport" data-protected data-action="COMMON_CODE_BULK_IMPORT" type="button" disabled>CSV 검증 및 일괄 저장</button>
+                </div>
+            </details>
             </div>
             <p>계층 코드 사용 예시</p>
             <div class="code-form">
@@ -326,24 +604,50 @@
             </div>
         </section>
 
+        <section id="audit" class="card accounts-card">
+            <div class="card-heading-row">
+                <div><span class="card-kicker">AUDIT TRAIL</span><h2>감사 이력</h2></div>
+                <button id="btnAuditRead" data-protected data-action="AUDIT_READ" type="button"
+                        aria-describedby="auditPermission" disabled>새로고침</button>
+            </div>
+            <p id="auditPermission" class="permission-help">민감정보를 제외한 관리 변경과 접근 이력을 조회합니다.</p>
+            <div class="table-toolbar audit-filters">
+                <label class="search-field"><span>대상·추적 ID</span><input id="auditSearch" type="search" placeholder="대상 ID 또는 trace ID"></label>
+                <label><span>행위자</span><input id="auditActor" type="search" placeholder="사용자 ID"></label>
+                <label><span>이벤트 유형</span><input id="auditEventType" type="search" placeholder="예: ACCESS_DENIED"></label>
+                <label><span>결과</span><select id="auditResult"><option value="">전체</option><option value="SUCCESS">성공</option><option value="DENIED">거부</option><option value="FAILED">실패</option></select></label>
+                <label><span>시작일</span><input id="auditFrom" type="date"></label>
+                <label><span>종료일</span><input id="auditTo" type="date"></label>
+                <label><span>페이지 크기</span><select id="auditSize"><option>10</option><option selected>20</option><option>50</option></select></label>
+            </div>
+            <p id="auditSummary" class="result-count" aria-live="polite">조회 대기</p>
+            <div class="table-scroll" data-scroll-label="감사 이력 표는 좌우로 스크롤할 수 있습니다.">
+                <table><thead><tr><th>발생 시각</th><th>행위자</th><th>이벤트</th><th>대상</th><th>결과</th><th>추적 ID</th><th>상세</th></tr></thead>
+                    <tbody id="auditRows"><tr><td colspan="7">감사 이력을 조회해 주세요.</td></tr></tbody></table>
+            </div>
+            <div id="auditPagination" class="admin-pagination" aria-label="감사 이력 페이지"></div>
+        </section>
+
         <!-- 직접 권한, 위임 권한, 만료 권한 시나리오를 재현하기 위한 데모 계정 -->
-        <section class="card accounts accounts-card">
+        <section class="card accounts accounts-card" data-admin-route="#developer-tools">
             <span class="card-kicker">TEST ACCOUNTS</span>
             <h2>테스트 계정</h2>
-            <table>
-                <thead><tr><th>계정</th><th>비밀번호</th><th>확인 포인트</th></tr></thead>
-                <tbody>
-                <tr><td>admin</td><td>admin123!</td><td>전체 메뉴·전체 기능</td></tr>
-                <tr><td>manager</td><td>manager123!</td><td>콘텐츠 조회·저장·게시</td></tr>
-                <tr><td>viewer</td><td>viewer123!</td><td>조회만, 쓰기는 403</td></tr>
-                <tr><td>delegate</td><td>delegate123!</td><td>유효 위임으로 manager와 동일</td></tr>
-                <tr><td>expired</td><td>expired123!</td><td>만료 위임 제외, 조회만</td></tr>
-                </tbody>
-            </table>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>계정</th><th>비밀번호</th><th>확인 포인트</th></tr></thead>
+                    <tbody>
+                    <tr><td>admin</td><td>admin123!</td><td>전체 메뉴·전체 기능</td></tr>
+                    <tr><td>manager</td><td>manager123!</td><td>콘텐츠 조회·저장·게시</td></tr>
+                    <tr><td>viewer</td><td>viewer123!</td><td>조회만, 쓰기는 403</td></tr>
+                    <tr><td>delegate</td><td>delegate123!</td><td>유효 위임으로 manager와 동일</td></tr>
+                    <tr><td>expired</td><td>expired123!</td><td>만료 위임 제외, 조회만</td></tr>
+                    </tbody>
+                </table>
+            </div>
         </section>
 
         <!-- 성공 응답 또는 표준 오류 봉투와 traceId를 그대로 확인하는 테스트 콘솔 -->
-        <section class="card result-card">
+        <section class="card result-card" data-admin-route="#developer-tools">
             <div class="console-header">
                 <span class="console-lights" aria-hidden="true"><i></i><i></i><i></i></span>
                 <div><span class="card-kicker">RESPONSE CONSOLE</span><h2>API 실행 결과</h2></div>
@@ -353,10 +657,13 @@
         </section>
 
         <footer class="page-footer">
-            <span>Access Studio · Permission, Menu, Program &amp; Common Service Demo</span>
+            <span>Access Studio · Authority, Program, Project &amp; Common Code Operations</span>
             <span>Server-side authorization enabled</span>
         </footer>
     </main>
 </div>
+<button id="adminSidebarBackdrop" class="sidebar-backdrop" type="button" aria-label="관리 메뉴 닫기" hidden></button>
+<p id="protectedActionHelp" class="sr-only">현재 로그인 사용자에게 허용되지 않은 기능이므로 실행할 수 없습니다.</p>
+<div id="adminToast" class="admin-toast" role="status" aria-live="polite"></div>
 </body>
 </html>

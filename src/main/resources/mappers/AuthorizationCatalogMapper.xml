@@ -1,0 +1,410 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.permissiondemo.authorization.persistence.AuthorizationCatalogMapper">
+
+    <resultMap id="organizationResultMap"
+               type="com.example.permissiondemo.authorization.AuthorizationCatalog$OrganizationDefinition">
+        <constructor>
+            <idArg column="ORG_ID" javaType="java.lang.String"/>
+            <arg column="ORG_NAME" javaType="java.lang.String"/>
+            <arg column="PARENT_ORG_ID" javaType="java.lang.String"/>
+            <arg column="ACTIVE_FLAG" javaType="_boolean"/>
+        </constructor>
+    </resultMap>
+
+    <resultMap id="userResultMap"
+               type="com.example.permissiondemo.authorization.AuthorizationCatalog$UserProfile">
+        <constructor>
+            <idArg column="USERNAME" javaType="java.lang.String"/>
+            <arg column="CURRENT_ORG_ID" javaType="java.lang.String"/>
+        </constructor>
+    </resultMap>
+
+    <resultMap id="authorityResultMap"
+               type="com.example.permissiondemo.authorization.AuthorizationCatalog$AuthorityDefinition">
+        <constructor>
+            <idArg column="AUTHORITY_ID" javaType="java.lang.String"/>
+            <arg column="AUTHORITY_NAME" javaType="java.lang.String"/>
+            <arg column="ACTIVE_FLAG" javaType="_boolean"/>
+        </constructor>
+    </resultMap>
+
+    <resultMap id="assignmentResultMap"
+               type="com.example.permissiondemo.authorization.AuthorizationCatalog$AuthorityAssignment">
+        <constructor>
+            <arg column="USERNAME" javaType="java.lang.String"/>
+            <arg column="ORG_ID" javaType="java.lang.String"/>
+            <arg column="AUTHORITY_ID" javaType="java.lang.String"/>
+            <arg column="ASSIGNMENT_TYPE"
+                 javaType="com.example.permissiondemo.authorization.AuthorizationCatalog$AssignmentType"/>
+            <arg column="ASSIGNMENT_STATUS"
+                 javaType="com.example.permissiondemo.authorization.AuthorizationCatalog$AssignmentStatus"/>
+            <arg column="VALID_FROM" javaType="java.time.LocalDate"/>
+            <arg column="VALID_TO" javaType="java.time.LocalDate"/>
+            <arg column="DELEGATED_BY" javaType="java.lang.String"/>
+            <arg column="HISTORY_SEQ" javaType="_long"/>
+        </constructor>
+    </resultMap>
+
+    <resultMap id="menuResultMap"
+               type="com.example.permissiondemo.authorization.AuthorizationCatalog$MenuDefinition">
+        <constructor>
+            <idArg column="MENU_ID" javaType="java.lang.String"/>
+            <arg column="PARENT_MENU_ID" javaType="java.lang.String"/>
+            <arg column="MENU_NAME" javaType="java.lang.String"/>
+            <arg column="MENU_PATH" javaType="java.lang.String"/>
+            <arg column="SORT_ORDER" javaType="_int"/>
+            <arg column="ACTIVE_FLAG" javaType="_boolean"/>
+            <arg column="DISPLAY_FLAG" javaType="_boolean"/>
+            <arg column="PUBLIC_FLAG" javaType="_boolean"/>
+            <arg column="MENU_AREA" javaType="com.example.permissiondemo.authorization.AuthorizationCatalog$MenuArea"/>
+        </constructor>
+    </resultMap>
+
+    <resultMap id="programResultMap"
+               type="com.example.permissiondemo.authorization.AuthorizationCatalog$ProgramDefinition">
+        <constructor>
+            <idArg column="PROGRAM_ID" javaType="java.lang.String"/>
+            <arg column="PROGRAM_NAME" javaType="java.lang.String"/>
+            <arg column="DESCRIPTION" javaType="java.lang.String"/>
+            <arg column="ACTIVE_FLAG" javaType="_boolean"/>
+            <arg column="SCREEN_CODE" javaType="com.example.permissiondemo.authorization.AuthorizationCatalog$ProgramScreen"/>
+        </constructor>
+    </resultMap>
+
+    <resultMap id="actionResultMap"
+               type="com.example.permissiondemo.authorization.AuthorizationCatalog$ProgramActionDefinition">
+        <constructor>
+            <idArg column="MENU_ID" javaType="java.lang.String"/>
+            <idArg column="PROGRAM_ID" javaType="java.lang.String"/>
+            <idArg column="ACTION_ID" javaType="java.lang.String"/>
+            <arg column="ACTION_NAME" javaType="java.lang.String"/>
+            <arg column="COMPONENT_ID" javaType="java.lang.String"/>
+            <arg column="SORT_ORDER" javaType="_int"/>
+            <arg column="ACTIVE_FLAG" javaType="_boolean"/>
+        </constructor>
+    </resultMap>
+
+    <resultMap id="menuGrantResultMap"
+               type="com.example.permissiondemo.authorization.persistence.AuthorizationCatalogMapper$MenuGrantRow">
+        <constructor>
+            <idArg column="AUTHORITY_ID" javaType="java.lang.String"/>
+            <idArg column="MENU_ID" javaType="java.lang.String"/>
+        </constructor>
+    </resultMap>
+
+    <resultMap id="actionGrantResultMap"
+               type="com.example.permissiondemo.authorization.persistence.AuthorizationCatalogMapper$ActionGrantRow">
+        <constructor>
+            <idArg column="AUTHORITY_ID" javaType="java.lang.String"/>
+            <idArg column="MENU_ID" javaType="java.lang.String"/>
+            <idArg column="PROGRAM_ID" javaType="java.lang.String"/>
+            <idArg column="ACTION_ID" javaType="java.lang.String"/>
+        </constructor>
+    </resultMap>
+
+    <resultMap id="domainVersionResultMap"
+               type="com.example.permissiondemo.authorization.persistence.AuthorizationCatalogMapper$DomainVersionRow">
+        <constructor>
+            <idArg column="DOMAIN_CODE" javaType="java.lang.String"/>
+            <arg column="VERSION_NO" javaType="_long"/>
+        </constructor>
+    </resultMap>
+
+    <select id="selectOrganizations" resultMap="organizationResultMap">
+        SELECT ORG_ID, ORG_NAME, PARENT_ORG_ID,
+               CASE USE_YN WHEN 'Y' THEN 1 ELSE 0 END AS ACTIVE_FLAG
+        FROM PM_ORGANIZATION
+        ORDER BY SORT_ORDER, ORG_ID
+    </select>
+
+    <select id="selectEnabledUsers" resultMap="userResultMap">
+        SELECT USERNAME, CURRENT_ORG_ID
+        FROM PM_USER_PROFILE
+        WHERE ENABLED_YN = 'Y'
+        ORDER BY USERNAME
+    </select>
+
+    <select id="selectAuthorities" resultMap="authorityResultMap">
+        SELECT AUTHORITY_ID, AUTHORITY_NAME,
+               CASE ACTIVE_YN WHEN 'Y' THEN 1 ELSE 0 END AS ACTIVE_FLAG
+        FROM PM_AUTHORITY
+        ORDER BY AUTHORITY_ID
+    </select>
+
+    <select id="selectAssignments" resultMap="assignmentResultMap">
+        SELECT USERNAME, ORG_ID, AUTHORITY_ID, ASSIGNMENT_TYPE, ASSIGNMENT_STATUS,
+               VALID_FROM, VALID_TO, DELEGATED_BY, HISTORY_SEQ
+        FROM PM_USER_AUTH_HIST
+        ORDER BY USERNAME, AUTHORITY_ID, ASSIGNMENT_TYPE, HISTORY_SEQ
+    </select>
+
+    <select id="selectMenus" resultMap="menuResultMap">
+        SELECT MENU_ID, PARENT_MENU_ID, MENU_NAME, MENU_PATH, SORT_ORDER, MENU_AREA,
+               CASE ACTIVE_YN WHEN 'Y' THEN 1 ELSE 0 END AS ACTIVE_FLAG,
+               CASE DISPLAY_YN WHEN 'Y' THEN 1 ELSE 0 END AS DISPLAY_FLAG,
+               CASE PUBLIC_YN WHEN 'Y' THEN 1 ELSE 0 END AS PUBLIC_FLAG
+        FROM PM_MENU
+        ORDER BY SORT_ORDER, MENU_ID
+    </select>
+
+    <select id="selectMenuGrants" resultMap="menuGrantResultMap">
+        SELECT AUTHORITY_ID, MENU_ID
+        FROM PM_AUTH_MENU
+        ORDER BY AUTHORITY_ID, MENU_ID
+    </select>
+
+    <select id="selectPrograms" resultMap="programResultMap">
+        SELECT PROGRAM_ID, PROGRAM_NAME, NVL(DESCRIPTION, '') AS DESCRIPTION, SCREEN_CODE,
+               CASE ACTIVE_YN WHEN 'Y' THEN 1 ELSE 0 END AS ACTIVE_FLAG
+        FROM PM_PROGRAM
+        ORDER BY PROGRAM_ID
+    </select>
+
+    <select id="selectActions" resultMap="actionResultMap">
+        SELECT MENU_ID, PROGRAM_ID, ACTION_ID, ACTION_NAME, COMPONENT_ID, SORT_ORDER,
+               CASE ACTIVE_YN WHEN 'Y' THEN 1 ELSE 0 END AS ACTIVE_FLAG
+        FROM PM_PROGRAM_ACTION
+        ORDER BY MENU_ID, PROGRAM_ID, SORT_ORDER, ACTION_ID
+    </select>
+
+    <select id="selectActionGrants" resultMap="actionGrantResultMap">
+        SELECT AUTHORITY_ID, MENU_ID, PROGRAM_ID, ACTION_ID
+        FROM PM_AUTH_ACTION
+        ORDER BY AUTHORITY_ID, MENU_ID, PROGRAM_ID, ACTION_ID
+    </select>
+
+    <select id="selectDomainVersions" resultMap="domainVersionResultMap">
+        SELECT DOMAIN_CODE, VERSION_NO
+        FROM PM_DOMAIN_VERSION
+        WHERE DOMAIN_CODE IN ('AUTHORITY', 'MENU', 'PROGRAM_ACTION')
+    </select>
+
+    <update id="mergeAuthority">
+        MERGE INTO PM_AUTHORITY target
+        USING DUAL
+        ON (target.AUTHORITY_ID = #{authority.id})
+        WHEN MATCHED THEN UPDATE SET
+            target.AUTHORITY_NAME = #{authority.name},
+            target.ACTIVE_YN = <choose><when test="authority.active">'Y'</when><otherwise>'N'</otherwise></choose>,
+            target.UPDATED_AT = SYSTIMESTAMP,
+            target.UPDATED_BY = 'SYSTEM'
+        WHEN NOT MATCHED THEN INSERT (
+            AUTHORITY_ID, AUTHORITY_NAME, ACTIVE_YN, CREATED_BY, UPDATED_BY
+        ) VALUES (
+            #{authority.id}, #{authority.name},
+            <choose><when test="authority.active">'Y'</when><otherwise>'N'</otherwise></choose>,
+            'SYSTEM', 'SYSTEM'
+        )
+    </update>
+
+    <delete id="deleteAuthorityMenuGrants">
+        DELETE FROM PM_AUTH_MENU WHERE AUTHORITY_ID = #{authorityId}
+    </delete>
+
+    <delete id="deleteAuthorityActionGrants">
+        DELETE FROM PM_AUTH_ACTION WHERE AUTHORITY_ID = #{authorityId}
+    </delete>
+
+    <delete id="deleteAuthority">
+        DELETE FROM PM_AUTHORITY WHERE AUTHORITY_ID = #{authorityId}
+    </delete>
+
+    <insert id="insertAssignment">
+        INSERT INTO PM_USER_AUTH_HIST (
+            ASSIGNMENT_ID, USERNAME, ORG_ID, AUTHORITY_ID, ASSIGNMENT_TYPE,
+            ASSIGNMENT_STATUS, VALID_FROM, VALID_TO, DELEGATED_BY, HISTORY_SEQ,
+            REASON, CREATED_BY
+        ) VALUES (
+            SQ_PM_USER_AUTH_HIST.NEXTVAL, #{assignment.username}, #{assignment.organizationId},
+            #{assignment.authorityId}, #{assignment.type}, #{assignment.status},
+            #{assignment.validFrom}, #{assignment.validTo},
+            #{assignment.delegatedBy,jdbcType=VARCHAR},
+            #{assignment.sequence}, NULL, 'SYSTEM'
+        )
+    </insert>
+
+    <update id="mergeMenu">
+        MERGE INTO PM_MENU target
+        USING DUAL
+        ON (target.MENU_ID = #{menu.id})
+        WHEN MATCHED THEN UPDATE SET
+            target.PARENT_MENU_ID = #{menu.parentId,jdbcType=VARCHAR},
+            target.MENU_NAME = #{menu.name},
+            target.MENU_AREA = #{menu.area},
+            target.MENU_PATH = #{menu.path,jdbcType=VARCHAR},
+            target.SORT_ORDER = #{menu.sortOrder},
+            target.ACTIVE_YN = <choose><when test="menu.active">'Y'</when><otherwise>'N'</otherwise></choose>,
+            target.DISPLAY_YN = <choose><when test="menu.displayed">'Y'</when><otherwise>'N'</otherwise></choose>,
+            target.PUBLIC_YN = <choose><when test="menu.publicMenu">'Y'</when><otherwise>'N'</otherwise></choose>,
+            target.UPDATED_AT = SYSTIMESTAMP,
+            target.UPDATED_BY = 'SYSTEM'
+        WHEN NOT MATCHED THEN INSERT (
+            MENU_ID, PARENT_MENU_ID, MENU_NAME, MENU_PATH, SORT_ORDER, MENU_AREA,
+            ACTIVE_YN, DISPLAY_YN, PUBLIC_YN, CREATED_BY, UPDATED_BY
+        ) VALUES (
+            #{menu.id}, #{menu.parentId,jdbcType=VARCHAR}, #{menu.name},
+            #{menu.path,jdbcType=VARCHAR}, #{menu.sortOrder}, #{menu.area},
+            <choose><when test="menu.active">'Y'</when><otherwise>'N'</otherwise></choose>,
+            <choose><when test="menu.displayed">'Y'</when><otherwise>'N'</otherwise></choose>,
+            <choose><when test="menu.publicMenu">'Y'</when><otherwise>'N'</otherwise></choose>,
+            'SYSTEM', 'SYSTEM'
+        )
+    </update>
+
+    <delete id="deleteFavoriteMenusByMenu">
+        DELETE FROM PM_FAVORITE_MENU WHERE MENU_ID = #{menuId}
+    </delete>
+
+    <delete id="deleteMenuGrantsByMenu">
+        DELETE FROM PM_AUTH_MENU WHERE MENU_ID = #{menuId}
+    </delete>
+
+    <delete id="deleteActionGrantsByMenu">
+        DELETE FROM PM_AUTH_ACTION WHERE MENU_ID = #{menuId}
+    </delete>
+
+    <delete id="deleteActionsByMenu">
+        DELETE FROM PM_PROGRAM_ACTION WHERE MENU_ID = #{menuId}
+    </delete>
+
+    <delete id="deleteMenu">
+        DELETE FROM PM_MENU WHERE MENU_ID = #{menuId}
+    </delete>
+
+    <update id="mergeMenuGrant">
+        MERGE INTO PM_AUTH_MENU target
+        USING DUAL
+        ON (target.AUTHORITY_ID = #{authorityId} AND target.MENU_ID = #{menuId})
+        WHEN NOT MATCHED THEN INSERT (AUTHORITY_ID, MENU_ID, CREATED_BY)
+        VALUES (#{authorityId}, #{menuId}, 'SYSTEM')
+    </update>
+
+    <delete id="deleteMenuGrant">
+        DELETE FROM PM_AUTH_MENU
+        WHERE AUTHORITY_ID = #{authorityId} AND MENU_ID = #{menuId}
+    </delete>
+
+    <update id="mergeProgram">
+        MERGE INTO PM_PROGRAM target
+        USING DUAL
+        ON (target.PROGRAM_ID = #{program.id})
+        WHEN MATCHED THEN UPDATE SET
+            target.PROGRAM_NAME = #{program.name},
+            target.SCREEN_CODE = #{program.screen},
+            target.DESCRIPTION = #{program.description},
+            target.ACTIVE_YN = <choose><when test="program.active">'Y'</when><otherwise>'N'</otherwise></choose>,
+            target.UPDATED_AT = SYSTIMESTAMP,
+            target.UPDATED_BY = 'SYSTEM'
+        WHEN NOT MATCHED THEN INSERT (
+            PROGRAM_ID, PROGRAM_NAME, DESCRIPTION, SCREEN_CODE, ACTIVE_YN, CREATED_BY, UPDATED_BY
+        ) VALUES (
+            #{program.id}, #{program.name}, #{program.description}, #{program.screen},
+            <choose><when test="program.active">'Y'</when><otherwise>'N'</otherwise></choose>,
+            'SYSTEM', 'SYSTEM'
+        )
+    </update>
+
+    <delete id="deleteActionGrantsByProgram">
+        DELETE FROM PM_AUTH_ACTION WHERE PROGRAM_ID = #{programId}
+    </delete>
+
+    <delete id="deleteActionsByProgram">
+        DELETE FROM PM_PROGRAM_ACTION WHERE PROGRAM_ID = #{programId}
+    </delete>
+
+    <delete id="deleteProgram">
+        DELETE FROM PM_PROGRAM WHERE PROGRAM_ID = #{programId}
+    </delete>
+
+    <update id="mergeAction">
+        MERGE INTO PM_PROGRAM_ACTION target
+        USING DUAL
+        ON (target.MENU_ID = #{action.menuId}
+            AND target.PROGRAM_ID = #{action.programId}
+            AND target.ACTION_ID = #{action.actionId})
+        WHEN MATCHED THEN UPDATE SET
+            target.ACTION_NAME = #{action.label},
+            target.COMPONENT_ID = #{action.componentId,jdbcType=VARCHAR},
+            target.SORT_ORDER = #{action.sortOrder},
+            target.ACTIVE_YN = <choose><when test="action.active">'Y'</when><otherwise>'N'</otherwise></choose>,
+            target.UPDATED_AT = SYSTIMESTAMP,
+            target.UPDATED_BY = 'SYSTEM'
+        WHEN NOT MATCHED THEN INSERT (
+            MENU_ID, PROGRAM_ID, ACTION_ID, ACTION_NAME, COMPONENT_ID, SORT_ORDER,
+            ACTIVE_YN, CREATED_BY, UPDATED_BY
+        ) VALUES (
+            #{action.menuId}, #{action.programId}, #{action.actionId}, #{action.label},
+            #{action.componentId,jdbcType=VARCHAR}, #{action.sortOrder},
+            <choose><when test="action.active">'Y'</when><otherwise>'N'</otherwise></choose>,
+            'SYSTEM', 'SYSTEM'
+        )
+    </update>
+
+    <delete id="deleteActionGrantsByAction">
+        DELETE FROM PM_AUTH_ACTION
+        WHERE MENU_ID = #{key.menuId}
+          AND PROGRAM_ID = #{key.programId}
+          AND ACTION_ID = #{key.actionId}
+    </delete>
+
+    <delete id="deleteAction">
+        DELETE FROM PM_PROGRAM_ACTION
+        WHERE MENU_ID = #{key.menuId}
+          AND PROGRAM_ID = #{key.programId}
+          AND ACTION_ID = #{key.actionId}
+    </delete>
+
+    <update id="mergeActionGrant">
+        MERGE INTO PM_AUTH_ACTION target
+        USING DUAL
+        ON (target.AUTHORITY_ID = #{authorityId}
+            AND target.MENU_ID = #{key.menuId}
+            AND target.PROGRAM_ID = #{key.programId}
+            AND target.ACTION_ID = #{key.actionId})
+        WHEN NOT MATCHED THEN INSERT (
+            AUTHORITY_ID, MENU_ID, PROGRAM_ID, ACTION_ID, CREATED_BY
+        ) VALUES (
+            #{authorityId}, #{key.menuId}, #{key.programId}, #{key.actionId}, 'SYSTEM'
+        )
+    </update>
+
+    <delete id="deleteActionGrant">
+        DELETE FROM PM_AUTH_ACTION
+        WHERE AUTHORITY_ID = #{authorityId}
+          AND MENU_ID = #{key.menuId}
+          AND PROGRAM_ID = #{key.programId}
+          AND ACTION_ID = #{key.actionId}
+    </delete>
+
+    <update id="bumpDomainVersion">
+        MERGE INTO PM_DOMAIN_VERSION target
+        USING (SELECT #{domainCode} AS DOMAIN_CODE FROM DUAL) source
+        ON (target.DOMAIN_CODE = source.DOMAIN_CODE)
+        WHEN MATCHED THEN UPDATE SET
+            target.VERSION_NO = target.VERSION_NO + 1,
+            target.UPDATED_AT = SYSTIMESTAMP,
+            target.UPDATED_BY = 'SYSTEM'
+        WHEN NOT MATCHED THEN INSERT (DOMAIN_CODE, VERSION_NO, UPDATED_BY)
+        VALUES (source.DOMAIN_CODE, 2, 'SYSTEM')
+    </update>
+
+    <select id="selectFavoriteMenuIds" resultType="string">
+        SELECT MENU_ID
+        FROM PM_FAVORITE_MENU
+        WHERE USERNAME = #{username}
+        ORDER BY CREATED_AT, MENU_ID
+    </select>
+
+    <insert id="insertFavorite">
+        INSERT INTO PM_FAVORITE_MENU (USERNAME, MENU_ID)
+        VALUES (#{username}, #{menuId})
+    </insert>
+
+    <delete id="deleteFavorite">
+        DELETE FROM PM_FAVORITE_MENU
+        WHERE USERNAME = #{username} AND MENU_ID = #{menuId}
+    </delete>
+</mapper>

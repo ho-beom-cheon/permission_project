@@ -28,12 +28,12 @@ import org.springframework.security.web.authentication.LoginUrlAuthenticationEnt
 import org.springframework.security.web.util.matcher.RequestMatcher;
 
 /**
- * 데모 프로필의 세션 로그인, URL 보호, CSRF와 인증·인가 실패 응답을 구성한다.
+ * 데모·Oracle 프로필의 세션 로그인, URL 보호, CSRF와 인증·인가 실패 응답을 구성한다.
  * Spring 로그인 역할은 인증 완료 표시만 담당하고 실제 업무 권한은 별도 카탈로그에서 계산한다.
  */
 @Configuration
 @EnableMethodSecurity
-@Profile("demo")
+@Profile({"demo", "oracle"})
 public class SecurityConfig {
 
     /**
@@ -45,7 +45,8 @@ public class SecurityConfig {
             HttpSecurity http,
             ApiErrorWriter errorWriter,
             AuditEventService auditEventService,
-            AuthorizationCatalog catalog) throws Exception {
+            AuthorizationCatalog catalog,
+            com.example.permissiondemo.common.WorkspaceService workspaceService) throws Exception {
         // 로그인 화면과 일반 페이지는 HTML 흐름을 사용하고 /api 하위 요청만 JSON 오류 처리 대상으로 삼는다.
         RequestMatcher apiRequest = request -> {
             String contextPath = request.getContextPath();
@@ -70,6 +71,9 @@ public class SecurityConfig {
                                 "/login-polish.css",
                                 "/api/csrf", "/error", "/favicon.ico")
                         .permitAll()
+                        .requestMatchers("/admin", "/admin/", "/index.html")
+                        .access((authentication, context) -> new org.springframework.security.authorization.AuthorizationDecision(
+                                workspaceService.canAccessAdmin(authentication.get())))
                         // API는 업무 권한과 별개로 우선 로그인 세션이 있어야 한다.
                         .requestMatchers("/api/**").authenticated()
                         .anyRequest().authenticated())
@@ -116,6 +120,7 @@ public class SecurityConfig {
                         .invalidateHttpSession(true)
                         .deleteCookies("JSESSIONID"))
                 .exceptionHandling(exceptions -> exceptions
+                        .accessDeniedPage("/access-denied.html")
                         // 단일 진입점에서 API와 일반 HTML을 구분해 서로 다른 실패 형식을 확실히 적용한다.
                         .authenticationEntryPoint((request, response, exception) -> {
                             if (!apiRequest.matches(request)) {
@@ -166,16 +171,30 @@ public class SecurityConfig {
 
     /**
      * 로컬 테스트 전용 사용자와 암호화된 비밀번호를 메모리에 구성한다.
-     * 운영 적용 시 이 빈을 사내 인증·SSO 연계 UserDetailsService로 교체해야 한다.
+     * Oracle 운영 프로필은 별도의 로컬 계정 UserDetailsService를 사용한다.
      */
     @Bean
+    @Profile("demo")
     UserDetailsService userDetailsService(PasswordEncoder passwordEncoder) {
         return new InMemoryUserDetailsManager(
                 demoUser("admin", "admin123!", passwordEncoder),
+                demoUser("backupAdmin", "backup123!", passwordEncoder),
+                demoUser("authorityManager", "authority123!", passwordEncoder),
+                demoUser("programManager", "program123!", passwordEncoder),
+                demoUser("projectManager", "project123!", passwordEncoder),
+                demoUser("codeManager", "code123!", passwordEncoder),
+                demoUser("auditor", "auditor123!", passwordEncoder),
+                demoUser("contentEditor", "content123!", passwordEncoder),
+                demoUser("seoulOperator", "seoul123!", passwordEncoder),
+                demoUser("busanViewer", "busan123!", passwordEncoder),
                 demoUser("manager", "manager123!", passwordEncoder),
                 demoUser("viewer", "viewer123!", passwordEncoder),
                 demoUser("delegate", "delegate123!", passwordEncoder),
-                demoUser("expired", "expired123!", passwordEncoder));
+                demoUser("expired", "expired123!", passwordEncoder),
+                demoUser("revoked", "revoked123!", passwordEncoder),
+                demoUser("moved", "moved123!", passwordEncoder),
+                demoUser("revokedManager", "revokedManager123!", passwordEncoder),
+                demoUser("orphanDelegate", "orphan123!", passwordEncoder));
     }
 
     /** 인증용 공통 역할만 가진 데모 UserDetails를 생성한다. */
