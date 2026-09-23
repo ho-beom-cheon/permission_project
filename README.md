@@ -1,213 +1,236 @@
-# 권한·메뉴·프로그램·공통코드 독립 테스트 프로젝트
+# 통합 관리 시스템
 
-ARISUINFO의 권한 및 공통 처리 개념을 Nexacro 없이 확인할 수 있도록 만든 Java 17 / Spring Boot 샘플입니다.
+권한관리, 프로그램관리, 프로젝트관리, 공통코드관리를 하나의 관리 콘솔과 서버 권한 체계로 제공하는 Java 17 / Spring Boot 애플리케이션입니다. 사용자 업무공간에서는 관리자가 지정한 메뉴·프로그램·기능 권한을 확인하고 공유 콘텐츠를 작성·조회·게시합니다.
 
-- 대상 경로: `C:\Users\이명주\Desktop\cheon\test`
-- 원본 `C:\arisuinfo`와 `C:\arisuccs`는 수정하지 않습니다.
-- DB, Nexacro Runtime, XFDL, Dataset, `BaseController`, 사내 SSO가 없어도 실행됩니다.
-- 모든 업무 권한은 요청 파라미터가 아닌 로그인 세션의 사용자명과 현재 조직으로 서버가 계산합니다.
-- 사용자·메뉴·기능 권한·관심 메뉴·공통코드를 `/api/bootstrap` 한 번으로 초기화합니다.
-- 오류 응답에는 공통 오류 코드, 요청 경로와 `traceId`가 포함됩니다.
-- 권한 마스터, 직접 부여·위임·회수, 메뉴 속성·권한 매핑, 프로그램·기능·권한 매핑과 공통코드 편집 화면을 제공합니다.
-- 로그인 후 실제 업무형 사용자 포털로 진입하며 권한별 메뉴·기능 버튼·공통코드 상태를 화면에 반영합니다.
-- 관리 변경은 사용자 포털에서 15초마다 자동 확인하거나 `권한 새로고침`으로 즉시 반영할 수 있습니다.
-- 로그인·로그아웃·인가 거부·권한·메뉴·관심 메뉴·공통코드 변경을 인메모리 감사 이력으로 확인할 수 있습니다.
-- 알려진 데모 계정 보호를 위해 기본 프로필은 `demo`, 바인딩 주소는 `127.0.0.1`이며 다른 프로필은 기동에 실패합니다.
+## 운영 범위
 
-원본 구조와 차이점은 [ARISUINFO_PERMISSION_ANALYSIS.md](ARISUINFO_PERMISSION_ANALYSIS.md)에 상세히 정리했습니다.
+- 단일 Spring Boot 서버와 Oracle Database를 기준으로 합니다.
+- 외부 SSO는 현재 범위에서 제외합니다.
+- 로그인은 Spring Security 폼 로그인과 서버 세션을 사용합니다.
+- `demo` 프로필은 DB 없이 인메모리 저장소로 빠르게 기능을 확인합니다.
+- `oracle` 프로필은 로그인 계정, 권한·메뉴·프로그램 원장, 권한 신청, 프로젝트, 공통코드, 콘텐츠, 관심 메뉴와 감사 이력을 Oracle에 저장합니다.
+- 클라이언트가 보낸 역할이나 권한 ID는 신뢰하지 않습니다. 서버가 로그인 사용자, 현재 조직, 최신 권한 이력과 프로젝트 역할로 다시 계산합니다.
+- 단일 서버이므로 로컬 캐시와 DB 도메인 버전을 사용하며 Redis나 분산 캐시는 사용하지 않습니다.
 
-## 매뉴얼
+## 핵심 기능
 
-- [사용자 매뉴얼](USER_MANUAL.md): 실행, 로그인, 계정별 테스트, 화면 사용법, 오류 확인
-- [개발자 매뉴얼](DEVELOPER_MANUAL.md): 구조, 권한 판정, API, 보안, 테스트, 실제 DB 전환 방법
-- [INFO 대비 보강 명세](INFO_UPGRADE_COMPARISON.md): 기존 INFO 처리, 개선 이유, 현재 구현 및 남은 범위 비교
-- [DB 구축 준비서](DATABASE_PREPARATION.md): Oracle 연결 설정, 테이블·컬럼·코멘트, 초기 데이터와 전환 순서
+### 권한관리
 
-## 1. 실행
+- 조직·사용자·권한 마스터 검색과 관리
+- 직접 권한과 위임 권한의 적용 기간, 최신 이력, 회수·만료 판정
+- 자기 권한 신청, 신청 취소, 관리자 승인·반려
+- 자기 승인·반려 금지, 요청 버전을 사용한 중복 결정 방지
+- 권한별 메뉴와 프로그램 기능 매핑
+- 변경 전후 값, 행위자, 조직, trace ID가 포함된 감사 이력
 
-필수 환경:
+### 프로그램관리
 
-- Java 17
-- Maven 3.9 이상
+- 계층 메뉴와 표시·활성·공용 속성 관리
+- 프로그램 마스터와 메뉴별 기능 관리
+- `menuId + programId + actionId` 복합 문맥으로 실행 권한 판정
+- 권한-메뉴 및 권한-기능 매핑
+- 비활성·미사용 항목의 안전한 삭제와 고아 매핑 정리
+- 검색·필터·정렬·제한된 페이징
+
+### 프로젝트관리
+
+- 프로젝트 상태·기간·오너·활성 상태 관리
+- 키워드·상태·오너·활성 조건 검색과 Oracle 네이티브 페이징
+- `OWNER`, `MANAGER`, `MEMBER`, `VIEWER` 역할과 프로젝트별 capability 계산
+- 상태 전이 사유와 행위자 이력
+- 오너 이전 시 신규 오너 승격과 기존 오너 강등을 한 트랜잭션으로 처리
+- 물리 삭제 대신 보관·복원, 낙관적 잠금 버전 검사
+
+### 공통코드관리
+
+- 코드 그룹과 상세 코드 전체 관리
+- 계층, 정렬, 활성 상태와 적용 기간
+- 자기 참조와 직·간접 순환 방지
+- 시스템 그룹 보호, 사용 중 항목의 안전한 비활성화·삭제 규칙
+- 그룹별 버전과 저장 성공 후 조회 캐시 무효화
+
+## 기술 구성
+
+| 구분 | 구성 |
+|---|---|
+| 언어 | Java 17 |
+| 애플리케이션 | Spring Boot 3.5.7 |
+| 보안 | Spring Security 폼 로그인, 세션, CSRF, 메서드 인가 |
+| 검증 | Jakarta Validation |
+| 영속화 | MyBatis 3.0.5, Oracle JDBC |
+| DB | Oracle Database Free 23.26.1 |
+| 테스트 | JUnit 5, AssertJ, Spring Security Test, MockMvc |
+
+## 문서
+
+- [사용자 매뉴얼](USER_MANUAL.md): 계정별 로그인과 네 관리 화면 사용법
+- [개발자 매뉴얼](DEVELOPER_MANUAL.md): 구조, 도메인 규칙, API, 트랜잭션과 테스트
+- [Oracle DB 구축 준비서](DATABASE_PREPARATION.md): 테이블·스크립트·정합성·배포 준비
+- [로컬 Oracle 가이드](LOCAL_ORACLE_SETUP.md): Docker, DBeaver, 환경변수와 마이그레이션
+- [관리 시스템 설계 기준](MANAGEMENT_SYSTEM_DESIGN.md): 제품 목적과 공통 완료 조건
+- [콘텐츠 저장 계약과 검증](CONTENT_PERSISTENCE_PLAN.md): 이슈 #5의 API, 데이터 보존, 충돌 처리와 검증 범위
+
+## 빠른 실행
+
+필수 환경은 Java 17입니다. Maven Wrapper가 Maven 배포본과 의존성을 내려받을 수 있어야 합니다.
+
+### demo 프로필
+
+기본 프로필이 `demo`이므로 별도 DB 없이 실행할 수 있습니다.
 
 ```powershell
-cd 'C:\Users\이명주\Desktop\cheon\test'
 .\mvnw.cmd clean test
 .\mvnw.cmd spring-boot:run
 ```
 
-브라우저에서 `http://127.0.0.1:8080`을 엽니다. 자체 로그인 화면을 거쳐 기본적으로 `/portal.html` 사용자 업무 포털로 이동합니다. `admin`은 포털 왼쪽 아래의 `시스템 관리 콘솔` 또는 `/` 주소로 관리 화면을 열 수 있습니다.
+브라우저에서 `http://127.0.0.1:8080/login`을 엽니다. 로그인 성공 후 `/portal.html`로 이동합니다. `/`와 `/portal`도 사용자 업무공간이며, 관리 콘솔은 `/admin`으로 분리됩니다. 관리 기능 권한이 없는 사용자는 `/admin`과 기존 `/index.html`에 직접 접근할 수 없습니다.
 
-## 2. 테스트 계정
+사용자 홈에서는 본인의 유효 권한명, 접근 가능한 업무 메뉴, 연결 프로그램과 기능별 `허용됨 / 권한 없음 / 사용 중지` 상태를 확인합니다. 관리 설정은 권한 새로고침과 15초 주기 확인으로 반영됩니다. 메뉴의 **화면 영역**을 사용자 업무공간 또는 관리자 콘솔로 지정하며, 부모와 자식은 같은 영역을 사용합니다. 관리자 화면에는 관리 영역 메뉴만 표시합니다.
 
-| 계정 | 비밀번호 | 직접 권한 | 위임 | 기대 결과 |
-|---|---|---|---|---|
-| `admin` | `admin123!` | `AUTH_SYSTEM_ADMIN` | 없음 | 시스템 메뉴와 전체 기능 허용 |
-| `manager` | `manager123!` | `AUTH_CONTENT_MANAGER` | 없음 | 콘텐츠 조회·저장·게시 허용 |
-| `viewer` | `viewer123!` | `AUTH_VIEWER` | 승인 대기 위임 1건 | 조회만 허용, 대기 위임 제외 |
-| `delegate` | `delegate123!` | `AUTH_VIEWER` | 유효한 콘텐츠 관리자 위임 | 조회·저장·게시 허용 |
-| `expired` | `expired123!` | `AUTH_VIEWER` | 2023년에 만료된 관리자 위임 | 조회만 허용 |
+프로그램의 **실행 화면**에서 `콘텐츠 관리` 또는 `내 권한 신청`을 연결할 수 있습니다. 사용자 카드의 실행 버튼은 프로그램 기능과 연결 대상 화면의 권한이 모두 있을 때 활성화됩니다. `연결 안 함`은 등록 정보만 표시합니다. 콘텐츠는 서버에서 검색·상세 조회·작성·수정·게시하며, `oracle`에서는 서버 재시작 후에도 유지됩니다. `demo`는 브라우저 새로고침에는 유지되지만 서버 재시작 시 초기화됩니다. 프로그램 등록은 기존 화면을 연결하는 기능입니다.
 
-위 비밀번호는 로컬 데모 전용입니다. 운영 환경에서는 계정과 비밀번호를 코드에 두지 않아야 합니다.
+기존 Oracle 스키마는 애플리케이션 실행 전에 `013_workspace_configuration.sql`과 `014_workspace_content.sql`까지 적용해야 합니다. 메뉴 영역·실행 화면 컬럼과 콘텐츠 테이블·시퀀스를 추가합니다. 적용 순서는 [로컬 Oracle 가이드](LOCAL_ORACLE_SETUP.md)를 참고하십시오.
 
-## 3. 처리 흐름
+### oracle 프로필
+
+먼저 `.env.oracle.example`을 `.env.oracle.local`로 복사하고 로컬 비밀번호를 입력합니다. 이 파일은 Git에서 제외됩니다.
+
+```powershell
+Copy-Item .env.oracle.example .env.oracle.local
+docker compose --env-file .env.oracle.local -f docker-compose.oracle.yml up -d
+docker compose --env-file .env.oracle.local -f docker-compose.oracle.yml ps
+```
+
+애플리케이션 프로세스에는 다음 환경변수를 설정합니다.
+
+```powershell
+$env:PM_DB_URL='jdbc:oracle:thin:@//127.0.0.1:1521/FREEPDB1'
+$env:PM_DB_USERNAME='PM_APP'
+$env:PM_DB_PASSWORD='<로컬 애플리케이션 비밀번호>'
+$env:SPRING_PROFILES_ACTIVE='oracle'
+.\mvnw.cmd spring-boot:run
+```
+
+자세한 내용은 [LOCAL_ORACLE_SETUP.md](LOCAL_ORACLE_SETUP.md)를 참고합니다. 비밀번호 원문은 문서, 소스, 커밋이나 채팅에 넣지 않습니다.
+
+## 역할별 기본 계정
+
+아래 계정은 로컬 검증 전용이며 `demo`와 초기화가 완료된 `oracle` 프로필에서 같은 비밀번호를 사용합니다.
+
+| 계정 | 비밀번호 | 대표 역할 |
+|---|---|---|
+| `admin` | `admin123!` | 시스템 관리자 |
+| `backupAdmin` | `backup123!` | 예비 시스템 관리자 |
+| `authorityManager` | `authority123!` | 권한 마스터·신청 승인 관리자 |
+| `programManager` | `program123!` | 메뉴·프로그램·기능 관리자 |
+| `projectManager` | `project123!` | 프로젝트 관리자 |
+| `codeManager` | `code123!` | 공통코드 관리자 |
+| `auditor` | `auditor123!` | 감사 조회자 |
+| `contentEditor` | `content123!` | 콘텐츠 관리자 |
+| `seoulOperator` | `seoul123!` | 서울 조직 프로젝트 운영자 |
+| `busanViewer` | `busan123!` | 부산 조직 조회 사용자 |
+
+기존 권한 판정의 만료·회수·조직 이동·위임 사례를 검증하는 추가 계정도 유지됩니다. 전체 목록은 [USER_MANUAL.md](USER_MANUAL.md)를 참고합니다.
+
+## 처리 흐름
 
 ```text
 폼 로그인
-  → Spring Security가 사용자 인증 및 세션 생성
-  → CurrentUserContext가 사용자·현재 조직·IP·traceId 제공
-  → EffectiveAuthorityService가 사용자명·현재 조직으로 최신 이력 선택
-  → 승인·기간·활성·위임 원천 검증
-  → MenuAuthorizationService가 공용 메뉴와 권한 메뉴 합집합 구성
-  → 허용된 자식의 상위 컨테이너 보존 및 정렬
-  → ProgramAuthorizationService가 menuId + programId + actionId 판정
-  → BootstrapService가 사용자·메뉴·기능·관심 메뉴·공통코드를 한 응답으로 구성
-  → portal.js가 허용 메뉴·기능 버튼·공통코드 상태를 실제 사용자 홈페이지에 표시
-  → 15초 자동 확인 또는 수동 새로고침으로 관리 변경 버전을 다시 조회
-  → 실제 업무 API는 @PreAuthorize로 같은 권한을 다시 검사
-  → 로그인·거부·변경 이벤트를 AuditEventService에 기록
+  → 세션 사용자와 현재 조직 조회
+  → 최신 직접·위임 권한 이력 선택
+  → 승인 상태·적용 기간·활성 권한·위임 원천 검증
+  → 접근 가능한 메뉴 트리 계산
+  → menuId + programId + actionId 기능 권한 계산
+  → 프로젝트 요청이면 프로젝트 참여 역할 capability 추가 검사
+  → 변경 요청이면 CSRF와 기대 버전 검사
+  → 업무 데이터·버전·감사 이력을 트랜잭션으로 저장
+  → 성공 후 로컬 캐시 무효화
 ```
 
-클라이언트는 `authIds`, `role`, `permissionIds`를 보내지 않습니다. 임의 값을 추가해도 서버가 읽지 않습니다.
+## 주요 API
 
-## 4. 구현 구성
+모든 JSON은 `{ "success": true, "data": ..., "error": null }` 형식의 공통 응답을 사용합니다. 변경 API에는 로그인 세션과 CSRF 헤더가 필요합니다.
 
-| 파일 | 역할 |
-|---|---|
-| `AuthorizationCatalog` | 수정 가능한 권한·메뉴·프로그램·기능 마스터와 사용자·권한 매핑의 인메모리 기준 데이터 |
-| `AdminService` | 권한·메뉴·프로그램 마스터 저장, 사용자 권한과 권한별 메뉴·기능 매핑 및 감사 기록 조정 |
-| `EffectiveAuthorityService` | 현재 조직의 최신 이력, 승인 상태, 유효기간, 활성 권한, 위임자 원천 권한을 확인해 유효 권한 합집합 계산 |
-| `MenuAuthorizationService` | 공용 메뉴 + 권한 메뉴, 숨김/비활성 제외, 상위 메뉴 보존, 순서 정렬 |
-| `ProgramAuthorizationService` | 메뉴·프로그램 문맥을 포함한 기능 권한과 화면 컴포넌트 ID 반환 |
-| `CurrentUserContext` | 인증 사용자, 현재 조직, 원격 IP, 요청 `traceId`를 공통 제공 |
-| `BootstrapService` | 사용자·메뉴·전체 허용 기능·관심 메뉴·공통코드·버전의 일관된 초기 스냅샷 구성 |
-| `FavoriteMenuService` | 현재 접근 가능한 메뉴만 사용자 관심 메뉴로 등록·조회·삭제 |
-| `AuditEventService` | 보안·변경 이벤트를 최근 500건까지 보관하고 공통 페이징으로 조회 |
-| `SecurityConfig` | 세션 로그인, CSRF, 인증/인가 실패 JSON, 데모 사용자 구성 |
-| `LoginController` | GET `/login`을 자체 로그인 화면에 연결하고 POST `/login`은 Spring Security에 위임 |
-| `CommonCodeService` | 계층·적용기간·활성 상태·그룹 버전·조회 캐시를 포함한 인메모리 공통코드 |
-| `ApiExceptionHandler` | 검증·인가·리소스·예상하지 못한 오류의 공통 JSON 응답 처리 |
-| `TraceIdFilter` | 모든 HTTP 요청에 추적 ID를 부여하고 응답 헤더와 오류 본문에 반환 |
-| `PageQuery` / `PageResult` | 최대 100건으로 제한된 0 기반 공통 페이징 계약 |
-| `PermissionApiController` | 현재 사용자, 메뉴, 기능 권한, 공통코드, CSRF API |
-| `BootstrapController` | 부트스트랩, 관심 메뉴, 계층 코드 뷰, 감사 이력 API |
-| `AdminController` | 권한·메뉴·프로그램·기능·공통코드 관리자 조회 및 변경 API |
-| `DemoBusinessController` | 조회·저장·게시·권한관리 서버 재검증 예제 |
-| `login.html` / `login.js` | 자체 로그인 UI와 익명 CSRF 토큰 준비 |
-| `portal.html` / `portal.js` | 실제 사용자 업무 홈, 권한 메뉴·버튼·공통코드 반영, 신규 메뉴 일반 화면 자동 생성 |
-| `index.html` / `app.js` | 관리자용 권한·사용자 권한·메뉴·프로그램·기능·공통코드 관리 콘솔 |
-| `*-polish.css` | 기존 공통 스타일을 건드리지 않고 로그인·포털·관리자 화면의 한글 가독성, 44px 이상 조작 영역과 모바일 배치를 보정 |
-
-## 5. API
-
-| Method | URL | 설명 | 추가 권한 |
+| 영역 | Method | URL | 설명 |
 |---|---|---|---|
-| GET | `/api/csrf` | 로그인 폼과 현재 세션의 CSRF 토큰 | 익명 허용 |
-| GET | `/api/bootstrap` | 사용자·메뉴·기능·관심 메뉴·공통코드 초기 스냅샷 | 로그인 |
-| GET | `/api/me` | 현재 사용자와 유효 업무 권한 | 로그인 |
-| GET | `/api/menus` | 권한별 메뉴 트리 | 로그인 |
-| GET | `/api/menus/{menuId}/programs/{programId}/actions` | 해당 메뉴·프로그램의 허용 기능 | 로그인 |
-| GET | `/api/common-codes/{groupCode}` | 활성 공통코드 | 로그인 |
-| GET | `/api/common-codes/{groupCode}/view` | 계층 조건·활성 조건·그룹 버전을 포함한 코드 조회 | 로그인 |
-| POST | `/api/common-codes/{groupCode}/items` | 계층·기간을 포함한 공통코드 추가/수정 | `COMMON_CODE_SAVE` + CSRF |
-| GET | `/api/me/favorite-menus` | 현재 접근 가능한 관심 메뉴 조회 | 로그인 |
-| POST | `/api/me/favorite-menus/{menuId}` | 접근 권한 재검증 후 관심 메뉴 등록 | 로그인 + CSRF |
-| DELETE | `/api/me/favorite-menus/{menuId}` | 관심 메뉴 삭제 | 로그인 + CSRF |
-| GET | `/api/audit-events?page=0&size=20` | 최근 감사 이벤트 페이징 조회 | `AUTHORITY_READ` |
-| GET | `/api/content/preview` | 콘텐츠 조회 예제 | `CONTENT_READ` |
-| POST | `/api/content/save` | 콘텐츠 저장 예제 | `CONTENT_SAVE` + CSRF |
-| POST | `/api/content/publish` | 콘텐츠 게시 예제 | `CONTENT_PUBLISH` + CSRF |
-| GET | `/api/admin/authorities` | 권한 마스터 조회 예제 | `AUTHORITY_READ` |
-| GET | `/api/admin/authority-view` | 사용자별 유효 권한과 전체 이력 | `AUTHORITY_READ` |
-| POST | `/api/admin/authorities/{authorityId}` | 권한 마스터 등록·수정 | `AUTHORITY_UPDATE` + CSRF |
-| POST | `/api/admin/users/{username}/authorities` | 직접·위임 권한 부여 | `AUTHORITY_UPDATE` + CSRF |
-| DELETE | `/api/admin/users/{username}/authorities/{authorityId}` | 유형별 권한 회수 | `AUTHORITY_UPDATE` + CSRF |
-| GET | `/api/admin/menu-view` | 메뉴 마스터와 권한별 매핑 | `AUTHORITY_READ` |
-| POST | `/api/admin/menus/{menuId}` | 메뉴 등록·수정 | `AUTHORITY_UPDATE` + CSRF |
-| PUT | `/api/admin/authorities/{authorityId}/menus/{menuId}` | 권한-메뉴 허용 변경 | `AUTHORITY_UPDATE` + CSRF |
-| GET | `/api/admin/program-view` | 프로그램·기능·권한 매핑 전체 조회 | `AUTHORITY_READ` |
-| POST | `/api/admin/programs/{programId}` | 프로그램 마스터 등록·수정 | `AUTHORITY_UPDATE` + CSRF |
-| POST | `/api/admin/program-actions/{menuId}/{programId}/{actionId}` | 프로그램 기능 등록·수정 | `AUTHORITY_UPDATE` + CSRF |
-| PUT | `/api/admin/authorities/{authorityId}/program-actions/{menuId}/{programId}/{actionId}` | 권한-기능 허용 변경 | `AUTHORITY_UPDATE` + CSRF |
-| GET | `/api/admin/common-code-view` | 공통코드 그룹별 건수·버전 | `COMMON_CODE_SAVE` |
+| 공통 | GET | `/api/csrf` | 로그인 폼과 세션용 CSRF 토큰 |
+| 공통 | GET | `/api/bootstrap` | 사용자·메뉴·기능·관심 메뉴·공통코드 스냅샷 |
+| 사용자 | GET | `/api/portal/bootstrap` | 본인의 업무 메뉴·프로그램·기능 허용 여부·권한명 |
+| 관리자 | GET | `/api/admin/bootstrap` | 관리 기능 권한을 검증한 관리자 전용 메뉴·기능 |
+| 콘텐츠 | GET | `/api/contents` | 제목·작성자·상태 코드 검색과 페이징 |
+| 콘텐츠 | GET | `/api/contents/{id}` | 본문·작성자·버전 상세 |
+| 콘텐츠 | POST / PUT | `/api/contents`, `/api/contents/{id}` | 작성·기대 버전을 사용한 수정 |
+| 콘텐츠 | POST | `/api/contents/publish` | 최대 50건 원자적 게시 |
+| 권한 신청 | POST | `/api/authority-requests` | 자기 권한 신청 |
+| 권한 신청 | GET | `/api/authority-requests/mine` | 내 신청 검색·페이징 |
+| 권한 승인 | GET | `/api/admin/authority-requests` | 관리자 승인 큐 |
+| 권한 승인 | POST | `/api/admin/authority-requests/{id}/approve` | 신청 승인 |
+| 권한 승인 | POST | `/api/admin/authority-requests/{id}/reject` | 신청 반려 |
+| 권한 | GET | `/api/admin/authorities` | 권한 마스터 검색·페이징 |
+| 권한 | GET | `/api/admin/user-authorities` | 사용자 권한 검색·페이징 |
+| 메뉴 | GET | `/api/admin/menus` | 메뉴 검색·페이징 |
+| 프로그램 | GET | `/api/admin/programs` | 프로그램 검색·페이징 |
+| 프로그램 | GET | `/api/admin/program-actions` | 기능 검색·페이징 |
+| 프로젝트 | GET | `/api/admin/projects` | 프로젝트 검색·페이징 |
+| 프로젝트 | GET | `/api/admin/projects/{projectId}` | 프로젝트·참여자·상태 이력 상세 |
+| 프로젝트 | POST | `/api/admin/projects/{projectId}/owner-transfer` | 오너 이전 |
+| 프로젝트 | POST | `/api/admin/projects/{projectId}/archive` | 프로젝트 보관 |
+| 프로젝트 | POST | `/api/admin/projects/{projectId}/restore` | 프로젝트 복원 |
+| 공통코드 | GET | `/api/admin/common-code-groups` | 코드 그룹 검색 |
+| 공통코드 | GET | `/api/admin/common-code-groups/{groupCode}/items` | 상세 코드 검색 |
+| 공통코드 | POST | `/api/admin/common-code-groups/{groupCode}/items/bulk` | 최대 100건 원자적 일괄 저장 |
+| 감사 | GET | `/api/audit-events` | 감사 이력 검색·페이징 |
 
-## 6. 화면 테스트 시나리오
+세부 요청 필드와 권한 키는 [DEVELOPER_MANUAL.md](DEVELOPER_MANUAL.md)에 정리되어 있습니다.
 
-1. `viewer`로 로그인해 실제 사용자 포털로 이동하는지 확인합니다.
-2. 홈과 콘텐츠 조회 메뉴만 표시되고 시스템 관리 콘솔 링크가 숨겨지는지 확인합니다.
-3. 콘텐츠 화면에서 조회만 활성화되고 작성·게시가 비활성인지 확인합니다.
-4. 관리자가 `AUTH_CONTENT_MANAGER`를 부여한 뒤 사용자 포털의 `권한 새로고침`을 누르면 작성·게시가 활성화되는지 확인합니다.
-5. 로그아웃 후 `manager`로 로그인합니다.
-6. 콘텐츠 저장·게시 버튼이 활성화되고 API가 성공하는지 확인합니다.
-7. `delegate`도 `manager`와 같은 콘텐츠 기능을 사용할 수 있는지 확인합니다.
-8. `expired`는 만료된 위임이 제외되어 조회만 가능한지 확인합니다.
-9. `admin`으로 로그인해 사용자 포털에 시스템 관리 메뉴와 관리 콘솔 링크가 표시되는지 확인합니다.
-10. `viewer`에게 콘텐츠 관리자 직접 권한을 부여한 뒤 유효 권한 반영과 회수를 확인합니다.
-11. 새 메뉴를 저장하고 `AUTH_VIEWER`에 연결한 뒤 사용자 포털의 사이드바·빠른 서비스·자동 생성 화면에 나타나는지 확인합니다.
-12. 새 권한·프로그램·기능을 저장하고 권한-기능을 연결한 뒤 대상 계정의 기능 API가 허용되는지 확인합니다.
-13. `ARTICLE_STATUS` 코드명을 수정한 뒤 사용자 홈과 콘텐츠 목록의 상태명 및 버전이 바뀌는지 확인합니다.
-14. 관심 메뉴를 등록·삭제하고 접근할 수 없는 메뉴 등록이 403인지 확인합니다.
-15. 서울을 선택하면 강남구·마포구가 표시되는지 확인합니다.
-16. 관리자로 감사 이력을 조회해 권한·메뉴·프로그램·기능 변경 이벤트를 확인합니다.
+## Oracle 초기화 순서
 
-브라우저 개발자 도구에서 버튼의 `disabled`를 제거해도 서버 API는 권한이 없으면 403을 반환합니다.
+컨테이너는 새 데이터 볼륨을 만들 때 다음 SQL을 순서대로 실행합니다.
 
-## 7. 자동 테스트
+1. `001_schema.sql` — 핵심 관리 원장
+2. `002_seed.sql` — 기본 조직·사용자·권한·메뉴·코드
+3. `003_project_domain.sql` — 프로젝트와 참여자
+4. `004_authority_workflow.sql` — 권한 신청·승인
+5. `005_product_seed.sql` — 연결된 관리 시나리오 데이터
+6. `006_local_account.sql` — 폼 로그인 계정 테이블
+7. `007_project_history.sql` — 프로젝트 상태 이력
+8. `008_common_code_upgrade.sql` — 코드 그룹 관리 속성
+9. `009_management_catalog_seed.sql` — 역할별 관리 원장 확장 시드
+10. `010_local_account_seed.sql` — 역할별 로컬 계정 암호 해시
+11. `011_project_portfolio_seed.sql` — 12개 프로젝트·50개 참여자·상태 이력 포트폴리오
+12. `012_column_comments.sql` — 컬럼 설명
+13. `013_workspace_configuration.sql` — 메뉴 영역·프로그램 실행 화면
+14. `014_workspace_content.sql` — 공유 콘텐츠 테이블·시퀀스 (초기 콘텐츠 없음)
+
+`003` 이후 스크립트는 기존 로컬 볼륨에 재적용할 수 있도록 멱등 구문으로 작성되어 있습니다. `001`과 `002`는 새 스키마 최초 생성용입니다.
+
+## 테스트
 
 ```powershell
 .\mvnw.cmd --batch-mode --no-transfer-progress test
 .\mvnw.cmd --batch-mode --no-transfer-progress verify
+node --test src/test/js/portal-status.test.cjs
 ```
 
-테스트 대상:
+실제 Oracle 통합 테스트는 `PM_DB_URL`, `PM_DB_USERNAME`, `PM_DB_PASSWORD`가 있을 때 실행됩니다. 프로젝트 상태 이력 테스트는 트랜잭션을 롤백하므로 검증 데이터가 남지 않습니다.
 
-- 승인된 직접 권한과 유효 위임 합집합
-- 과거 승인 뒤 최신 회수, 이전 조직 권한 제외
-- 만료 위임, 승인 대기 위임, 비활성 권한 제외
-- 위임자의 원천 직접 권한 검증
-- 공용 메뉴와 허용 메뉴의 상위 노드 보존
-- 숨김 메뉴 제외와 형제 정렬
-- `menuId + programId + actionId` 문맥 검증
-- 권한·프로그램·기능 신규 등록과 권한-기능 매핑의 실제 사용자 인가 반영
-- 클라이언트의 `authIds`·`role` 조작 무시
-- 미인증 API 401
-- 조회 사용자의 쓰기 API 403
-- 쓰기 권한이 있어도 CSRF가 없으면 403
-- 유효 권한과 CSRF가 모두 있을 때만 쓰기 성공
-- 공통코드 활성 필터·정렬·입력 검증
-- 사용자·메뉴·기능·공통코드의 단일 부트스트랩 스냅샷
-- 상·하위 공통코드, 적용 기간, 그룹 버전과 캐시 무효화
-- 관심 메뉴 접근 권한 재검증과 등록·삭제
-- 표준 검증 오류의 필드 목록, 요청 경로와 `traceId`
-- 감사 이력 기록과 최대 크기가 제한된 공통 페이징
+주요 검증 범위:
 
-## 8. Git에 올리기 전
+- 직접·위임·회수·만료·조직 이동 권한 판정
+- 자기 승인 금지와 신청 버전 충돌
+- 메뉴 조상 보존과 프로그램 복합 권한
+- 프로젝트 검색·오너 이전·역할 capability·보관·상태 이력
+- 공통코드 계층·기간·순환·그룹 보호·캐시 무효화
+- 미인증 401, 인가·CSRF 실패 403과 표준 오류 응답
+- MyBatis XML 파싱과 실제 Oracle 왕복
+- 콘텐츠 기능 권한·CSRF·상태 코드·동시 수정 충돌·일괄 게시 롤백·Oracle CLOB 저장
 
-이 폴더는 자동으로 Git 저장소를 만들지 않았습니다. 필요할 때 다음처럼 초기화할 수 있습니다.
+2026-09-24 검증: Java 124건(실제 Oracle 6건 포함, 건너뜀 0), JavaScript 5건 통과. 별도 JAR 패키징과 Oracle 8092 브라우저의 작성·수정·게시·재시작 후 유지도 확인했습니다. 권한 신청의 Oracle 별도 연결 간 승인·취소 경합 테스트는 미실행이며 콘텐츠 동시 수정 테스트와 구분합니다.
 
-```powershell
-git init -b main
-git add .gitattributes .gitignore .mvn mvnw mvnw.cmd pom.xml *.md src
-git update-index --chmod=+x mvnw
-git diff --cached --check
-git status --short
-git commit -m "feat: add permission and menu demo"
-```
+## 보안 및 배포 주의
 
-`.idea/`, `target/`, 사용자 Maven 설정과 로컬 저장소는 Git 대상에서 제외합니다.
-Linux CI에서는 `./mvnw --batch-mode --no-transfer-progress clean verify`를 사용하면 됩니다.
-
-## 9. 실제 DB 연계 시 교체 지점
-
-현재 데이터는 재시작 시 초기화됩니다. 실제 적용에서는 다음만 Repository/Mapper로 교체하고 서비스 계약은 유지하는 방식을 권장합니다.
-
-1. `AuthorizationCatalog.authorities()` → 권한 마스터 조회
-2. `assignmentsFor(username)` → 현재 조직의 사용자 최신 승인 이력 + 유효 위임 조회
-3. `menuGrantsFor(authorityId)` → 권한-메뉴 매핑 조회
-4. `programs()` / `programActions()` / `actionGrantsFor()` → 프로그램·기능 마스터 및 권한 매핑 조회
-5. `CommonCodeService` 저장소 → 공통코드 테이블
-6. `FavoriteMenuService` 저장소 → 사용자-관심 메뉴 테이블
-7. `AuditEventService` 저장소 → 변경 불가능한 감사 이력 테이블 또는 로그 수집 시스템
-
-권한 부여·회수, 하위 정리, 고아 권한 제거, 이력 기록은 하나의 서버 트랜잭션으로 처리해야 합니다.
-메뉴·권한·공통코드를 캐시할 때는 변경 버전과 캐시 무효화를 같은 트랜잭션 경계에서 처리해야 합니다.
+- 현재 구현은 로컬·단일 서버용입니다. `DemoProfileGuard`가 `demo` 또는 `oracle` 하나만 허용합니다.
+- 서버는 기본적으로 `127.0.0.1:8080`에만 바인딩합니다.
+- 로컬 계정은 개발·검증용입니다. 외부 노출 전에는 계정 수명주기, 비밀번호 정책, HTTPS 프록시와 백업 정책을 별도로 확정해야 합니다.
+- SSO 연동, 다중 서버 캐시 동기화와 분산 세션은 현재 범위가 아닙니다.
+- Oracle 비밀번호와 `.env.oracle.local`은 절대 커밋하지 않습니다.
