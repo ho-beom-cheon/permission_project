@@ -16,7 +16,7 @@ function fixture() {
     }
     const nodes = new Map();
     const get = id => { if (!nodes.has(id)) nodes.set(id, node()); return nodes.get(id); };
-    const context = vm.createContext({document: {addEventListener() {}, createElement: node,
+    const context = vm.createContext({URLSearchParams, document: {addEventListener() {}, createElement: node,
         getElementById: get, querySelector: () => get('submit'), querySelectorAll: () => []}});
     vm.runInContext(source, context);
     vm.runInContext('showToast = () => {}; requestJson = async () => { throw new Error("unexpected request"); };', context);
@@ -41,13 +41,37 @@ test('reactivating codes restores only the choices and actions actually enabled'
     assert.deepEqual(get('contentStatusInput').children.map(option => option.value), ['REVIEW']);
     assert.equal(get('submit').disabled, false);
     assert.equal(get('btnContentSave').attributes['aria-disabled'], 'false');
+    assert.equal(get('btnContentSave').title, '새 콘텐츠 작성');
     assert.equal(get('btnContentPublish').attributes['aria-disabled'], 'true');
 });
 
 test('a removed publish status prevents the request and never substitutes another status', async () => {
     const {run} = fixture();
-    run('contentStatuses = [{code:"DRAFT",name:"작성 중"}]; selectedContentIds.add("108");');
+    run('contentItems = [{id:"108",status:"DRAFT",version:"1"}]; contentStatuses = [{code:"DRAFT",name:"작성 중"}]; selectedContentIds.add("108");');
     await run('publishSelectedContents()');
-    assert.equal(run('contentItems[0].status'), 'PUBLISHED');
+    assert.equal(run('contentItems[0].status'), 'DRAFT');
     assert.equal(run('selectedContentIds.size'), 1);
+});
+
+test('a slower previous search cannot overwrite the latest server result', async () => {
+    const {run} = fixture();
+    run('hasContentAction = () => true; renderContentRows = () => {}; const pending = []; requestJson = () => new Promise(resolve => pending.push(resolve));');
+    const first = run('loadContents(false)');
+    const second = run('loadContents(false)');
+    run('pending[1]({data:{content:[{id:"2",title:"최신 결과"}], totalElements:1,totalPages:1}})');
+    await second;
+    run('pending[0]({data:{content:[{id:"1",title:"이전 결과"}], totalElements:1,totalPages:1}})');
+    await first;
+    assert.equal(run('contentItems[0].title'), '최신 결과');
+});
+
+test('revoking read permission discards an already pending content response', async () => {
+    const {run} = fixture();
+    run('hasContentAction = () => true; renderContentRows = () => {}; let finish; requestJson = () => new Promise(resolve => { finish = resolve; });');
+    const pending = run('loadContents(false)');
+    run('hasContentAction = () => false');
+    await run('loadContents(false)');
+    run('finish({data:{content:[{id:"1",title:"권한 회수 전 결과"}], totalElements:1,totalPages:1}})');
+    await pending;
+    assert.equal(run('contentItems.length'), 0);
 });

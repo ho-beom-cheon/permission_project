@@ -614,3 +614,9 @@ body { color: #27364a; background: var(--soft); }
 .user-workspace .workspace-program-launch { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-top: 14px; }
 .user-workspace .workspace-program-launch small { color: #607088; }
 .user-workspace .workspace-open:disabled { color: #8793a3; cursor: not-allowed; }
+.content-title-link { background: none; border: 0; color: #285bad; padding: 0; font: inherit; text-align: left; cursor: pointer; overflow-wrap: anywhere; }
+.content-title-link:hover { text-decoration: underline; }
+.content-dialog { max-height: 90dvh; overflow-y: auto; }
+.content-dialog textarea { box-sizing: border-box; width: 100%; min-width: 0; resize: vertical; padding: 12px; border: 1px solid #dce3ed; border-radius: 6px; font: inherit; line-height: 1.6; }
+.content-dialog-meta { color: #65748a; font-size: 12px; overflow-wrap: anywhere; }
+.content-form-message { padding: 12px; background: #fff1ec; color: #983414; font-size: 13px; line-height: 1.6; }

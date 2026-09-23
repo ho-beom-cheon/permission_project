@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.permissiondemo.content.ContentMapper">
+    <resultMap id="post" type="com.example.permissiondemo.content.ContentPost">
+        <constructor>
+            <idArg column="CONTENT_ID" javaType="_long"/>
+            <arg column="CONTENT_TYPE" javaType="java.lang.String"/>
+            <arg column="TITLE" javaType="java.lang.String"/>
+            <arg column="BODY" javaType="java.lang.String" jdbcType="CLOB"/>
+            <arg column="STATUS_CODE" javaType="java.lang.String"/>
+            <arg column="AUTHOR" javaType="java.lang.String"/>
+            <arg column="CREATED_AT" javaType="java.time.Instant"/>
+            <arg column="UPDATED_AT" javaType="java.time.Instant"/>
+            <arg column="VERSION_NO" javaType="_long"/>
+        </constructor>
+    </resultMap>
+    <sql id="filter">
+        WHERE LOWER(<choose><when test="field == 'author'">AUTHOR</when><when test="field == 'status'">STATUS_CODE</when><otherwise>TITLE</otherwise></choose>) LIKE #{query} ESCAPE '\'
+    </sql>
+    <select id="nextId" resultType="_long">SELECT PM_CONTENT_SEQ.NEXTVAL FROM DUAL</select>
+    <select id="selectById" resultMap="post">SELECT * FROM PM_CONTENT WHERE CONTENT_ID = #{id}</select>
+    <select id="count" resultType="_long">SELECT COUNT(*) FROM PM_CONTENT <include refid="filter"/></select>
+    <select id="search" resultMap="post">
+        SELECT * FROM PM_CONTENT <include refid="filter"/>
+        ORDER BY CONTENT_ID DESC OFFSET #{offset} ROWS FETCH NEXT #{size} ROWS ONLY
+    </select>
+    <insert id="insert">
+        INSERT INTO PM_CONTENT (CONTENT_ID, CONTENT_TYPE, TITLE, BODY, STATUS_CODE, AUTHOR, CREATED_AT, UPDATED_AT, VERSION_NO)
+        VALUES (#{post.id}, #{post.type}, #{post.title}, #{post.body,jdbcType=CLOB}, #{post.status}, #{post.author}, #{post.createdAt}, #{post.updatedAt}, #{post.version})
+    </insert>
+    <update id="update">
+        UPDATE PM_CONTENT SET CONTENT_TYPE = #{post.type}, TITLE = #{post.title}, BODY = #{post.body,jdbcType=CLOB},
+            STATUS_CODE = #{post.status}, UPDATED_AT = #{post.updatedAt}, VERSION_NO = #{post.version}
+        WHERE CONTENT_ID = #{post.id} AND VERSION_NO = #{post.version} - 1
+    </update>
+</mapper>

@@ -15,16 +15,13 @@ let requestOptionsLoaded = false;
 let sidebarOpen = false;
 const selectedContentIds = new Set();
 const CONTENT_PAGE_SIZE = 4;
-const contentItems = [
-    {no: 108, type: '공지', title: '통합 업무포털 이용 안내', status: 'PUBLISHED', author: '운영관리자', date: '2026.09.01'},
-    {no: 107, type: '업무', title: '주간 서비스 운영 현황', status: 'DRAFT', author: 'manager', date: '2026.08.31'},
-    {no: 106, type: '자료', title: '정보보안 준수사항 안내', status: 'PUBLISHED', author: '보안담당자', date: '2026.08.28'},
-    {no: 105, type: '소식', title: '시스템 기능 개선 결과', status: 'DRAFT', author: 'admin', date: '2026.08.25'},
-    {no: 104, type: '업무', title: '프로젝트 권한관리 적용 안내', status: 'PUBLISHED', author: 'admin', date: '2026.08.22'},
-    {no: 103, type: '자료', title: '업무 메뉴 이용 가이드', status: 'DRAFT', author: 'manager', date: '2026.08.20'},
-    {no: 102, type: '공지', title: '개인정보 처리 유의사항', status: 'PUBLISHED', author: '보안담당자', date: '2026.08.18'},
-    {no: 101, type: '소식', title: '서비스 오픈 안내', status: 'PUBLISHED', author: '운영관리자', date: '2026.08.14'}
-];
+let contentItems = [];
+let contentTotal = 0;
+let contentTotalPages = 1;
+let contentLoadSequence = 0;
+let editingContent = null;
+let contentSaving = false;
+let contentPublishing = false;
 
 /**
  * 사용자 포털의 이벤트를 먼저 연결하고 서버 기준 화면 컨텍스트를 초기화한다.
@@ -131,6 +128,14 @@ async function loadPortal(notify) {
             renderDynamicPages(context.menus);
             enableActions(context.programActions);
             renderStatuses(statuses);
+            if (!hasContentAction('CONTENT_READ')) {
+                contentLoadSequence++;
+                contentItems = [];
+                contentTotal = 0;
+                contentTotalPages = 1;
+                selectedContentIds.clear();
+                closeContentDialog();
+            }
             renderContentRows(statuses.items, selectedContents);
             renderSummary(workspace);
             document.getElementById('serviceSearch').value = searchValue;
@@ -418,12 +423,12 @@ function renderStatuses(groupView) {
 
 /** 사용자 콘텐츠 목록의 상태명을 서버 공통코드와 연결해 관리 변경 결과를 목록에도 반영한다. */
 function renderContentRows(statuses, selectedContents = new Set()) {
-    selectedContents.forEach(id => selectedContentIds.add(String(id)));
+    selectedContents.forEach(id => {
+        if (contentItems.some(item => item.id === String(id))) selectedContentIds.add(String(id));
+    });
     contentStatuses = statuses;
-    const items = filteredContents();
-    const totalPages = Math.max(1, Math.ceil(items.length / CONTENT_PAGE_SIZE));
-    contentPage = Math.min(contentPage, totalPages);
-    const pageItems = items.slice((contentPage - 1) * CONTENT_PAGE_SIZE, contentPage * CONTENT_PAGE_SIZE);
+    const totalPages = contentTotalPages;
+    const pageItems = contentItems;
     const body = document.getElementById('contentRows');
     body.replaceChildren();
     pageItems.forEach(item => {
@@ -433,15 +438,22 @@ function renderContentRows(statuses, selectedContents = new Set()) {
         const checkCell = document.createElement('td');
         const checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
-        checkbox.value = String(item.no);
-        checkbox.checked = selectedContentIds.has(String(item.no));
+        checkbox.value = item.id;
+        checkbox.checked = selectedContentIds.has(item.id);
         checkbox.disabled = document.getElementById('btnContentPublish').dataset.authorized !== 'true';
-        checkbox.setAttribute('aria-label', `${item.no}번 콘텐츠 선택`);
+        checkbox.setAttribute('aria-label', `${item.id}번 콘텐츠 선택`);
         checkbox.addEventListener('change', updateContentSelectionState);
         checkCell.appendChild(checkbox);
-        appendCell(row, String(item.no));
+        appendCell(row, item.id);
         appendCell(row, item.type);
-        appendCell(row, item.title);
+        const titleCell = document.createElement('td');
+        const open = document.createElement('button');
+        open.type = 'button';
+        open.className = 'content-title-link';
+        open.textContent = item.title;
+        open.addEventListener('click', () => openContentDetail(item.id));
+        titleCell.appendChild(open);
+        row.appendChild(titleCell);
         const statusCell = document.createElement('td');
         const badge = document.createElement('span');
         badge.className = `state-badge ${status.code.toLowerCase()}`;
@@ -450,7 +462,7 @@ function renderContentRows(statuses, selectedContents = new Set()) {
         // 관리 화면에서 정한 ARTICLE_STATUS 이름을 제목 다음 상태 열에 실제로 삽입한다.
         row.appendChild(statusCell);
         appendCell(row, item.author);
-        appendCell(row, item.date);
+        appendCell(row, new Date(item.createdAt).toLocaleDateString('ko-KR'));
         row.prepend(checkCell);
         ['선택', '번호', '구분', '제목', '상태', '작성자', '등록일'].forEach((label, index) => {
             const cell = row.children[index];
@@ -467,24 +479,9 @@ function renderContentRows(statuses, selectedContents = new Set()) {
         body.appendChild(row);
     }
     document.getElementById('contentResultSummary').textContent =
-        `총 ${items.length}건 · ${contentPage}/${totalPages}페이지`;
+        `총 ${contentTotal}건 · ${contentPage}/${totalPages}페이지`;
     renderContentPagination(totalPages);
     updateContentSelectionState();
-}
-
-function filteredContents() {
-    const field = document.getElementById('contentFilterField').value;
-    const query = document.getElementById('contentSearchInput').value.trim().toLowerCase();
-    if (!query) {
-        return contentItems;
-    }
-    return contentItems.filter(item => {
-        if (field === 'status') {
-            const status = contentStatuses.find(candidate => candidate.code === item.status);
-            return `${item.status} ${status?.name || ''}`.toLowerCase().includes(query);
-        }
-        return String(item[field] || '').toLowerCase().includes(query);
-    });
 }
 
 function renderContentPagination(totalPages) {
@@ -501,12 +498,12 @@ function renderContentPagination(totalPages) {
         }
         button.addEventListener('click', () => {
             contentPage = page;
-            renderContentRows(contentStatuses, selectedContentIds);
+            loadContents(false).catch(showPortalError);
         });
         pagination.appendChild(button);
     };
     addButton('‹', contentPage - 1, contentPage === 1);
-    for (let page = 1; page <= totalPages; page += 1) {
+    for (let page = Math.max(1, contentPage - 2); page <= Math.min(totalPages, contentPage + 2); page += 1) {
         addButton(String(page), page, false, page === contentPage);
     }
     addButton('›', contentPage + 1, contentPage === totalPages);
@@ -563,6 +560,7 @@ function showCurrentPage({scroll = true} = {}) {
             link.removeAttribute('aria-current');
         }
     });
+    if (route === '#content') loadContents(false).catch(showPortalError);
     if (scroll) {
         window.scrollTo({top: 0, behavior: 'smooth'});
     }
@@ -643,13 +641,48 @@ function focusSearch(event) {
     }
 }
 
-/** 권한 확인 API를 통과한 뒤 입력한 조건으로 콘텐츠 목록을 필터링한다. */
+function hasContentAction(actionId) {
+    return Boolean(portalContext?.programActions.some(action => action.menuId === 'CONTENT_LIST'
+        && action.programId === 'CONTENT' && action.actionId === actionId));
+}
+
+/** 응답 순서가 뒤바뀌어도 이전 검색·권한의 데이터로 화면을 덮어쓰지 않는다. */
+async function loadContents(notify) {
+    const sequence = ++contentLoadSequence;
+    if (!hasContentAction('CONTENT_READ')) {
+        contentItems = []; contentTotal = 0; contentTotalPages = 1;
+        selectedContentIds.clear();
+        renderContentRows(contentStatuses);
+        return;
+    }
+    const params = new URLSearchParams({field: document.getElementById('contentFilterField').value,
+        query: document.getElementById('contentSearchInput').value.trim(), page: String(contentPage - 1), size: String(CONTENT_PAGE_SIZE)});
+    document.getElementById('contentResultSummary').textContent = '콘텐츠 조회 중';
+    try {
+        const payload = await requestJson(`/api/contents?${params}`);
+        if (sequence !== contentLoadSequence) return;
+        contentItems = payload.data.content;
+        contentTotal = payload.data.totalElements;
+        contentTotalPages = Math.max(1, payload.data.totalPages);
+        selectedContentIds.clear();
+        renderContentRows(contentStatuses);
+        if (notify) showToast(`${contentTotal}건의 콘텐츠를 조회했습니다.`);
+    } catch (error) {
+        if (sequence !== contentLoadSequence) return;
+        contentItems = []; contentTotal = 0; contentTotalPages = 1;
+        selectedContentIds.clear();
+        renderContentRows(contentStatuses);
+        document.getElementById('contentResultSummary').textContent = '조회하지 못했습니다. 다시 조회해 주세요.';
+        if (error.status === 403) closeContentDialog();
+        throw error;
+    }
+}
+
+/** 입력 조건을 서버에서 검색한다. */
 async function searchContents() {
     try {
-        await requestJson('/api/content/preview');
         contentPage = 1;
-        renderContentRows(contentStatuses, selectedContentIds);
-        showToast(`${filteredContents().length}건의 콘텐츠를 조회했습니다.`);
+        await loadContents(true);
     } catch (error) {
         showPortalError(error);
     }
@@ -682,7 +715,8 @@ function updateContentSelectionState() {
     const canPublish = hasPublishAuthority && hasPublishStatus;
     const saveButton = document.getElementById('btnContentSave');
     saveButton.setAttribute('aria-disabled', String(saveButton.dataset.authorized !== 'true' || contentStatuses.length === 0));
-    if (contentStatuses.length === 0) saveButton.title = '관리자가 활성화한 업무 상태가 없습니다.';
+    saveButton.title = contentStatuses.length === 0 ? '관리자가 활성화한 업무 상태가 없습니다.'
+        : saveButton.dataset.authorized !== 'true' ? '현재 사용자에게 콘텐츠 저장 권한이 없습니다.' : '새 콘텐츠 작성';
     const selectedVisible = visible.filter(checkbox => checkbox.checked).length;
     selectAll.disabled = !canPublish || visible.length === 0;
     selectAll.checked = visible.length > 0 && selectedVisible === visible.length;
@@ -705,13 +739,51 @@ function updateContentSelectionState() {
 }
 
 function openContentDialog() {
+    if (!hasContentAction('CONTENT_SAVE')) return;
     if (contentStatuses.length === 0) {
         showToast('사용 가능한 업무 상태가 없습니다. 관리자에게 문의해 주세요.');
         return;
     }
     document.getElementById('contentForm').reset();
+    editingContent = null;
+    prepareContentDialog(true);
     document.getElementById('contentDialog').showModal();
     document.getElementById('contentTitleInput').focus();
+}
+
+async function openContentDetail(id) {
+    try {
+        const payload = await requestJson(`/api/contents/${encodeURIComponent(id)}`);
+        editingContent = payload.data;
+        document.getElementById('contentTypeInput').value = editingContent.type;
+        document.getElementById('contentTitleInput').value = editingContent.title;
+        document.getElementById('contentBodyInput').value = editingContent.body;
+        document.getElementById('contentStatusInput').value = editingContent.status;
+        const editable = hasContentAction('CONTENT_SAVE')
+            && (editingContent.status !== 'PUBLISHED' || hasContentAction('CONTENT_PUBLISH'));
+        prepareContentDialog(editable);
+        document.getElementById('contentDialog').showModal();
+    } catch (error) { showPortalError(error); }
+}
+
+function prepareContentDialog(editable) {
+    document.getElementById('contentFormMessage').hidden = true;
+    document.getElementById('contentFormMessage').textContent = '';
+    document.getElementById('contentDialogTitle').textContent = editingContent ? (editable ? '콘텐츠 수정' : '콘텐츠 상세') : '새 콘텐츠 작성';
+    document.getElementById('contentDialogMeta').textContent = editingContent
+        ? `작성자 ${editingContent.author} · 버전 ${editingContent.version} · 상태 ${editingContent.status}` : '내용을 입력하고 저장하세요.';
+    ['contentTitleInput', 'contentBodyInput'].forEach(id => { document.getElementById(id).readOnly = !editable; });
+    document.getElementById('contentTypeInput').disabled = !editable;
+    document.getElementById('contentStatusInput').disabled = !editable || !contentStatuses.length;
+    Array.from(document.getElementById('contentStatusInput').options).forEach(option => {
+        option.disabled = option.value === 'PUBLISHED' && !hasContentAction('CONTENT_PUBLISH');
+    });
+    if (!editingContent) {
+        const allowed = Array.from(document.getElementById('contentStatusInput').options).find(option => !option.disabled);
+        document.getElementById('contentStatusInput').value = allowed?.value || '';
+    }
+    document.getElementById('btnContentSubmit').hidden = !editable;
+    document.getElementById('btnContentSubmit').disabled = !contentStatuses.length;
 }
 
 function closeContentDialog() {
@@ -720,6 +792,7 @@ function closeContentDialog() {
 
 async function saveNewContent(event) {
     event.preventDefault();
+    if (contentSaving || !hasContentAction('CONTENT_SAVE')) return;
     if (!contentStatuses.some(status => status.code === document.getElementById('contentStatusInput').value)) {
         showToast('현재 사용 가능한 업무 상태를 선택해 주세요.');
         return;
@@ -730,25 +803,37 @@ async function saveNewContent(event) {
         return;
     }
     try {
-        await requestJson('/api/content/save', {method: 'POST'});
-        contentItems.unshift({
-            no: Math.max(...contentItems.map(item => item.no), 0) + 1,
+        contentSaving = true;
+        document.getElementById('btnContentSubmit').disabled = true;
+        await requestJson(editingContent ? `/api/contents/${editingContent.id}` : '/api/contents', {
+            method: editingContent ? 'PUT' : 'POST', body: {
             type: document.getElementById('contentTypeInput').value,
-            title,
+            title, body: document.getElementById('contentBodyInput').value,
             status: document.getElementById('contentStatusInput').value,
-            author: portalContext.user.username,
-            date: new Date().toISOString().slice(0, 10).replaceAll('-', '.')
-        });
+            version: editingContent?.version || '0'
+        }});
         contentPage = 1;
         closeContentDialog();
-        renderContentRows(contentStatuses, selectedContentIds);
-        showToast('새 콘텐츠를 저장했습니다.');
+        try {
+            await loadContents(false);
+            showToast('콘텐츠를 저장했습니다.');
+        } catch {
+            showToast('저장은 완료됐지만 목록을 불러오지 못했습니다. 조회 버튼을 눌러 확인해 주세요.');
+        }
     } catch (error) {
-        showPortalError(error);
+        const message = document.getElementById('contentFormMessage');
+        message.textContent = error.status === 409
+            ? '다른 사용자가 변경했거나 상태가 중지되었습니다. 입력 내용을 보관한 뒤 목록과 권한을 새로고침해 주세요.'
+            : error.message || '저장하지 못했습니다. 다시 확인해 주세요.';
+        message.hidden = false;
+    } finally {
+        contentSaving = false;
+        document.getElementById('btnContentSubmit').disabled = !contentStatuses.length;
     }
 }
 
 async function publishSelectedContents() {
+    if (contentPublishing) return;
     if (selectedContentIds.size === 0) {
         showToast('게시할 콘텐츠를 선택해 주세요.');
         return;
@@ -759,18 +844,22 @@ async function publishSelectedContents() {
         return;
     }
     try {
-        await requestJson('/api/content/publish', {method: 'POST'});
-        contentItems.forEach(item => {
-            if (selectedContentIds.has(String(item.no))) {
-                item.status = publishStatus.code;
-            }
-        });
+        contentPublishing = true;
+        await requestJson('/api/contents/publish', {method: 'POST', body: {items: contentItems
+            .filter(item => selectedContentIds.has(item.id)).map(item => ({id: item.id, version: item.version}))}});
         const publishedCount = selectedContentIds.size;
         selectedContentIds.clear();
-        renderContentRows(contentStatuses, selectedContentIds);
-        showToast(`${publishedCount}건의 콘텐츠를 게시했습니다.`);
+        try {
+            await loadContents(false);
+            showToast(`${publishedCount}건의 콘텐츠를 게시했습니다.`);
+        } catch {
+            showToast('게시가 완료됐지만 목록을 불러오지 못했습니다. 조회 버튼을 눌러 확인해 주세요.');
+        }
     } catch (error) {
-        showPortalError(error);
+        if (error.status === 409) showToast('변경 충돌 또는 상태 중지로 게시하지 못했습니다. 목록과 권한을 새로고침해 주세요.');
+        else showPortalError(error);
+    } finally {
+        contentPublishing = false;
     }
 }
 

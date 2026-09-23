@@ -1152,7 +1152,7 @@ public class AuthorizationCatalog {
     /** 실제 구현된 사용자 화면만 등록 프로그램에 연결한다. 외부 URL이나 임의 코드는 실행하지 않는다. */
     public enum ProgramScreen {
         NONE("연결 안 함", null, null),
-        CONTENT_DEMO("콘텐츠 업무 예제", "CONTENT_LIST", "#content"),
+        CONTENT_DEMO("콘텐츠 관리", "CONTENT_LIST", "#content"),
         AUTHORITY_REQUEST("내 권한 신청", "MY_AUTH_REQUEST", "#authority-request");
 
         private final String label;

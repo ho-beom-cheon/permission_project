@@ -21,6 +21,7 @@ SET FEEDBACK ON
 @/opt/permission/sql/011_project_portfolio_seed.sql
 @/opt/permission/sql/012_column_comments.sql
 @/opt/permission/sql/013_workspace_configuration.sql
+@/opt/permission/sql/014_workspace_content.sql
 
 EXIT SUCCESS
 SQL
